@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Lindhaven investeringssimulator</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: seminariet är ett ärende som växer. Höger = faktablad med nya uppgifter överst och grundcaset under, vänster = aktuell etapp (PM + frågor). Genomgången efter lärarens kod ligger under. */
 :root{
@@ -222,16 +222,169 @@ footer{margin-top:26px;color:var(--muted);font-size:12.5px;display:grid;gap:10px
 .events li b{font-family:var(--f-num);font-weight:600}
 .pdesc{color:var(--ink-2);font-size:13.5px;max-width:78ch}
 </style>
+<style>
+/* ===== Lindhaven: visuell identitet för simuleringen (läggs ovanpå grundstilen) ===== */
+:root{
+  --bg:#e9eeec; --surface:#ffffff; --surface-2:#f1f5f3; --ink:#14232a; --ink-2:#465861; --muted:#6f7f87;
+  --line:#d3ddd9; --grid:#e3e9e6; --axis:#b3c1bc; --accent:#0b5d5b; --accent-ink:#ffffff; --accent-2:#0f7b77;
+  --capsule:#f0b417; --capsule-bg:#fdf3d4; --s-a:#2763d6; --s-b:#d9701c; --s-c:#0b8f6e;
+  --good:#17704a; --good-bg:#def1e7; --bad:#b8392a; --bad-bg:#f8e3df; --warn-bg:#fdf3d4;
+  --hud:#0d2f33; --hud-ink:#e6f1ef; --hud-2:#8fb3ae;
+  --f-display:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"Instrument Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0c1517; --surface:#142126; --surface-2:#1b2b30; --ink:#e9f1ef; --ink-2:#b2c3c0; --muted:#86999a;
+  --line:#26383d; --grid:#1f3035; --axis:#3a5056; --accent:#5ec4bd; --accent-ink:#06201f; --accent-2:#7fd6cf;
+  --capsule:#f3c443; --capsule-bg:#3a3214; --s-a:#5b8ff0; --s-b:#ee8a3a; --s-c:#2cbf95;
+  --good:#5ad39a; --good-bg:#11301f; --bad:#ff8b7c; --bad-bg:#3a1a16; --warn-bg:#3a3214;
+  --hud:#081b1e; --hud-ink:#e6f1ef; --hud-2:#7fa6a1; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0c1517; --surface:#142126; --surface-2:#1b2b30; --ink:#e9f1ef; --ink-2:#b2c3c0; --muted:#86999a;
+  --line:#26383d; --grid:#1f3035; --axis:#3a5056; --accent:#5ec4bd; --accent-ink:#06201f; --accent-2:#7fd6cf;
+  --capsule:#f3c443; --capsule-bg:#3a3214; --s-a:#5b8ff0; --s-b:#ee8a3a; --s-c:#2cbf95;
+  --good:#5ad39a; --good-bg:#11301f; --bad:#ff8b7c; --bad-bg:#3a1a16; --warn-bg:#3a3214;
+  --hud:#081b1e; --hud-ink:#e6f1ef; --hud-2:#7fa6a1; color-scheme:dark }
+body{font-size:15.5px;line-height:1.55;font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+h1,h2{font-weight:650;letter-spacing:-.01em}
+h2{font-size:22px}
+h3{text-transform:none;letter-spacing:0;font-size:14px;font-weight:600;color:var(--ink-2)}
+.wrap{padding-block:0 48px}
+.card{border-radius:14px;border-color:var(--line)}
+.btn{border-radius:10px}
+.btn.primary{border-radius:10px;font-weight:600;padding:11px 20px}
+.btn.primary.armed{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--bad) 22%,transparent)}}
+
+/* ---- HUD: företagets statusrad ---- */
+.hud{position:sticky;top:0;z-index:20;margin:0 -20px 20px;padding:10px 20px;background:var(--hud);color:var(--hud-ink);display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px 22px;align-items:center;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.brand{display:flex;gap:10px;align-items:center;min-width:0}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{display:block;font-family:var(--f-display);font-size:17px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.brand span{display:block;font-size:12.5px;color:var(--hud-2);line-height:1.3}
+.hud .steps{margin:0;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.hud .steps li{background:transparent;border:0;border-radius:0;padding:0;color:var(--hud-2);flex:1 1 0;min-width:74px;display:grid;gap:5px;font-size:12px;white-space:nowrap}
+.hud .steps li::before{content:"";height:5px;border-radius:3px;background:color-mix(in srgb,var(--hud-ink) 18%,transparent)}
+.hud .steps li.done::before{background:var(--hud-2)}
+.hud .steps li.now::before{background:var(--capsule)}
+.hud .steps li.now{color:var(--hud-ink);font-weight:600;border:0}
+.hud .steps li b{display:none}
+.timer{display:grid;justify-items:end;gap:1px;min-width:92px}
+.timer .t{font-family:var(--f-display);font-size:24px;font-weight:650;line-height:1;font-variant-numeric:tabular-nums}
+.timer .l{font-size:11.5px;color:var(--hud-2)}
+.timer.low .t{color:var(--capsule)}
+.timer.over .t{color:#ff9d8f}
+.hud .btn.quiet{color:var(--hud-2);padding:4px 6px;font-size:13px}
+.decisions{display:flex;flex-wrap:wrap;gap:8px;margin:-6px 0 18px}
+.decisions .stamp{display:inline-flex;gap:8px;align-items:baseline;border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;padding:4px 10px;font-size:13px;background:var(--surface)}
+.decisions .stamp b{font-weight:650}
+.decisions .stamp.fresh{animation:stamp .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes stamp{from{transform:scale(1.35) rotate(-4deg);opacity:0}}
+@media (max-width:820px){ .hud{grid-template-columns:minmax(0,1fr) auto auto;margin-inline:-16px;padding-inline:16px} .hud .steps{grid-column:1/-1;order:3} .brand span{display:none} }
+
+/* ---- start ---- */
+.hero{display:grid;gap:22px;grid-template-columns:minmax(0,1fr);align-items:start;padding:18px 0 8px}
+@media (min-width:900px){ .hero{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px} }
+.hero h1{font-size:clamp(34px,5vw,58px);line-height:1.02;letter-spacing:-.025em;font-weight:700;max-width:14ch}
+.hero .lead{font-size:18px;color:var(--ink-2);max-width:52ch;margin-top:14px}
+.hero .how{margin-top:22px;padding:0;list-style:none;counter-reset:s;gap:10px}
+.hero .how li{counter-increment:s;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:baseline}
+.hero .how li::before{content:counter(s);font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--accent);border:1.5px solid var(--accent);border-radius:50%;width:26px;height:26px;display:grid;place-items:center}
+.join{display:grid;gap:14px;border-radius:16px;padding:22px;border-top:6px solid var(--accent)}
+.join h2{font-size:24px}
+.join .pass{font-size:13.5px;color:var(--muted)}
+.startgrid{max-width:none}
+
+/* ---- meddelandet ---- */
+.memo{gap:14px}
+.memo .from{display:flex;gap:12px;align-items:center}
+.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:17px;color:#fff;flex:none}
+.memo .from .who{display:grid;line-height:1.3}
+.memo .from .who b{font-weight:600}
+.memo .from .who span{font-size:13px;color:var(--muted)}
+.memo .from .pill{margin-left:auto;background:var(--capsule);color:#1d1600;font-weight:600;font-size:12.5px;border-radius:999px;padding:2px 10px}
+.memo h2.subj{font-size:clamp(24px,3vw,32px);line-height:1.12;letter-spacing:-.015em;font-weight:700}
+.memo p{font-size:16.5px;line-height:1.6}
+.card.arrive{animation:arrive .7s cubic-bezier(.2,.9,.3,1) both}
+@keyframes arrive{from{opacity:0;transform:translateY(-14px) scale(.985);box-shadow:0 0 0 3px var(--capsule)}}
+.qhead h2{font-size:20px}
+.rules{border-radius:10px;border-left:4px solid var(--accent);background:var(--surface-2)}
+form.q{counter-reset:q}
+form.q>.fld{counter-increment:q;position:relative;padding-left:40px}
+form.q>.fld::before{content:counter(q);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:8px;background:var(--surface-2);color:var(--ink-2);font-family:var(--f-display);font-weight:700;display:grid;place-items:center;font-size:14px}
+form.q>.fld.err::before{background:var(--bad-bg);color:var(--bad)}
+.numrow input,.ctl input[type=number],.gate input{font-family:var(--f-body);font-variant-numeric:tabular-nums}
+.numrow input{font-size:18px;font-weight:600;width:150px;border-radius:10px;border-width:1.5px;background:var(--surface)}
+.numrow input:focus{border-color:var(--accent)}
+.opts label{border-radius:10px;padding:9px 12px}
+.opts label:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface));box-shadow:inset 0 0 0 1px var(--accent)}
+textarea,.sel,.startgrid input[type=text]{border-radius:10px}
+
+/* ---- faktabladet ---- */
+@media (min-width:980px){ .sim.two{grid-template-columns:minmax(0,1fr) 360px} .facts{top:calc(env(safe-area-inset-top,0px) + 84px);max-height:calc(100vh - 100px)} }
+.facts h2{font-size:18px}
+.facts .rowsf{display:grid;gap:0}
+.facts .fr{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:4px 0;border-bottom:1px dashed var(--grid)}
+.facts .fr:last-child{border-bottom:0}
+.facts .fr .k{color:var(--ink-2);min-width:0}
+.facts .fr .v{text-align:right;white-space:nowrap;font-weight:500}
+.facts .fr .v s{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.facts .fr.new{background:var(--capsule-bg);border-radius:8px;padding:6px 8px;margin:2px 0;border-bottom:0}
+.facts .fr.new .v{font-weight:700}
+.facts .fg.decided{background:color-mix(in srgb,var(--accent) 8%,var(--surface));border:1.5px solid var(--accent);border-radius:10px;padding:10px 12px}
+.facts details.base summary{cursor:pointer;font-weight:600;color:var(--ink-2);padding:4px 0}
+
+/* ---- förhandlingen ---- */
+.negtop{background:var(--hud);color:var(--hud-ink);border-radius:14px;padding:16px 18px}
+.negtop .k{text-transform:none;letter-spacing:0;font-size:13px;color:var(--hud-2)}
+.negtop .v{font-family:var(--f-display);font-size:30px;font-weight:700}
+.pips{display:flex;gap:6px;margin-top:8px}
+.pips i{width:22px;height:8px;border-radius:4px;background:var(--capsule)}
+.pips i.used{background:color-mix(in srgb,var(--hud-ink) 22%,transparent)}
+.neglog{gap:10px}
+.neglog li{grid-template-columns:36px minmax(0,1fr);column-gap:10px;border:0;padding:0;max-width:60ch;background:transparent}
+.neglog li .avatar{width:34px;height:34px;font-size:14px;grid-row:span 2}
+.neglog li b{text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--muted);font-weight:600}
+.neglog li .txt{background:var(--surface-2);border-radius:4px 14px 14px 14px;padding:9px 13px}
+.neglog li.vi{justify-self:end;grid-template-columns:minmax(0,1fr)}
+.neglog li.vi b{text-align:right}
+.neglog li.vi .txt{background:var(--accent);color:var(--accent-ink);border-radius:14px 4px 14px 14px}
+.neglog li.fresh .txt{position:relative}
+.neglog li.fresh .txt>span{animation:revealTxt .01s 1.1s both}
+.neglog li.fresh .txt::after{content:"";position:absolute;left:14px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:var(--muted);box-shadow:11px 0 0 var(--muted),22px 0 0 var(--muted);animation:typing 1.1s steps(3,end) both}
+@keyframes revealTxt{from{visibility:hidden}}
+@keyframes typing{0%{opacity:.3}50%{opacity:1}99%{opacity:.6}100%{opacity:0;visibility:hidden}}
+
+/* ---- utfallet ---- */
+.outhead{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));background:var(--hud);color:var(--hud-ink);border-radius:14px;padding:16px 18px}
+.outhead .k{font-size:13px;color:var(--hud-2)}
+.outhead .v{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1.1}
+.outhead .v.pos{color:#7fe0b4} .outhead .v.neg{color:#ff9d8f}
+.events li{border-left-color:var(--capsule);background:var(--surface-2);border-radius:0 10px 10px 0;padding:8px 10px 8px 12px}
+.events li.fresh{animation:arrive .6s cubic-bezier(.2,.9,.3,1) both}
+.note{border-radius:10px;border-left:4px solid var(--accent);font-size:15px}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition:none!important} }
+.hud{margin-inline:0;box-shadow:0 0 0 100vmax var(--hud);clip-path:inset(0 -100vmax)}
+.hud .brand{grid-column:1} .hud .steps{grid-column:2} .hud .timer{grid-column:3} .hud #restart{grid-column:4;justify-self:end}
+@media (max-width:820px){ .hud{margin-inline:0} .hud .brand{grid-column:1} .hud .timer{grid-column:2} .hud #restart{grid-column:3} .hud .steps{grid-column:1/-1;grid-row:2} }
+fieldset.fld>legend{float:left;width:100%;margin-bottom:6px}
+fieldset.fld>legend+*{clear:both}
+.facts .fr .v .old{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.neglog li.vi b{grid-column:1}
+@media (max-width:820px){ .hud .steps li{min-width:0} .hud .steps li:not(.now){font-size:0;gap:0} }
+</style>
+
 
 <div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Lindhaven investeringssimulator</h1>
-      <p class="lede">Ni har löst grundcaset i förväg. Under seminariet är ni företagets ekonomiavdelning. Ni får nya uppgifter, fattar bindande beslut, förhandlar med köparen och får till sist se hur det gick.</p>
-    </div>
+  <header class="hud" id="hud">
+    <div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="10" width="28" height="14" rx="7" fill="#f0b417"/><path d="M17 10h7a7 7 0 0 1 0 14h-7z" fill="#e6f1ef"/><line x1="17" y1="10" x2="17" y2="24" stroke="#0d2f33" stroke-width="1.5"/></svg><div><b>Lindhaven Pharma</b><span id="hudSub">Investeringssimulering</span></div></div>
+    <ol class="steps" id="steps"></ol>
+    <div class="timer" id="timer" hidden role="timer" aria-live="off"></div>
     <button class="btn quiet" id="restart" type="button">Börja om</button>
   </header>
-  <ol class="steps" id="steps"></ol>
+  <div class="decisions" id="decisions" hidden aria-label="Era låsta beslut"></div>
   <main id="app"></main>
   <section id="disc" hidden></section>
   <footer>
@@ -461,21 +614,46 @@ function setup(){ if(st.sem==null){ SEM=null; PAR=null; STAGES=[]; return; } SEM
   STAGES=[stage1(),SEM.stage2(PAR),SEM.stage3(PAR),stage4(SEM,PAR),stage5(SEM,PAR)]; STAGES.forEach(function(s,i){s.id="e"+(i+1);}); STAGES[1].short=SH[SEM.id][0]; STAGES[2].short=SH[SEM.id][1]; }
 
 /* ================================================================ rendering av simuleringen */
-function renderSteps(){ var ol=$("steps"); ol.textContent=""; if(st.step===0||!SEM){ ol.hidden=true; return; } ol.hidden=false;
-  STAGES.forEach(function(s,i){ var n=i+1, cls=n<st.step?"done":(n===st.step?"now":""); ol.appendChild(h("li",{cls:cls},[h("b",{text:String(n)}),s.short])); });
-  ol.appendChild(h("li",{cls:st.step>STAGES.length?"now":""},[h("b",{text:"✓"}),"Utfallet"])); }
+var ROLECOL={"Finanschefen":"#0b5d5b","Säljchefen":"#2763d6","Vd":"#14232a","Inköpschefen":"#9a5b12","Produktionschefen":"#6a4bc4","Utvecklingschefen":"#b8392a","Styrelsens ordförande":"#3d4f57"};
+function avatar(name,col){ var a=h("span",{cls:"avatar","aria-hidden":"true",text:(name||"?").charAt(0).toUpperCase()}); a.style.background=col||ROLECOL[name]||"#465861"; return a; }
+function stageOf(n){ return STAGES[n-1]; }
+function decisionChips(){ var out=[]; if(!SEM) return out;
+  var rec=A("e2.rec"); if(st.step>2&&rec) out.push(["Rekommendation", rec==="lock"?"sälj till Vantrell":"alternativ "+rec, 2]);
+  var d=A("e3.d3"); if(st.step>3&&d) out.push([SEM.dName, d==="ja"?"ja":"nej", 3]);
+  var N=st.neg; if(N&&N.done) out.push(["Vantrell", N.deal?"sålt för "+fmt(N.price,0)+" Mkr":"ingen affär", 4]);
+  var alt=A("e5.alt"); if(st.step>5&&alt) out.push(["Genomför", "alternativ "+alt, 5]);
+  return out; }
+function renderSteps(){ var ol=$("steps"), sub=$("hudSub"), dc=$("decisions"); ol.textContent=""; dc.textContent="";
+  if(st.step===0||!SEM){ ol.hidden=true; dc.hidden=true; sub.textContent="Investeringssimulering"; tick(); return; }
+  ol.hidden=false; sub.textContent="Seminarium "+SEM.id+": "+SEM.name.toLowerCase()+", grupp "+st.grp;
+  STAGES.forEach(function(s,i){ var n=i+1, cls=n<st.step?"done":(n===st.step?"now":""); ol.appendChild(h("li",{cls:cls,"aria-current":n===st.step?"step":null},[h("b",{text:String(n)}),s.short])); });
+  ol.appendChild(h("li",{cls:st.step>STAGES.length?"now":""},[h("b",{text:"✓"}),"Utfallet"]));
+  var ch=decisionChips(); st.stamps=st.stamps||[];
+  ch.forEach(function(c){ var id=c[0]+c[2], fresh=st.stamps.indexOf(id)<0; if(fresh) st.stamps.push(id);
+    dc.appendChild(h("span",{cls:"stamp"+(fresh?" fresh":"")},[h("span",{text:c[0]+":"}),h("b",{text:c[1]})])); });
+  dc.hidden=!ch.length; save(); tick(); }
+function tick(){ var el=$("timer"); if(!el) return; if(!SEM||st.step<1||st.step>STAGES.length){ el.hidden=true; return; }
+  var s=stageOf(st.step); st.t0=st.t0||{}; if(!st.t0[st.step]){ st.t0[st.step]=Date.now(); save(); }
+  var left=Math.round(s.min*60-(Date.now()-st.t0[st.step])/1000), a=Math.abs(left), mm=Math.floor(a/60), ss=a%60;
+  el.hidden=false; el.className="timer"+(left<0?" over":(left<180?" low":""));
+  el.textContent=""; el.appendChild(h("span",{cls:"t",text:(left<0?"+":"")+mm+":"+(ss<10?"0":"")+ss})); el.appendChild(h("span",{cls:"l",text:left<0?"över riktmärket":"kvar av etappen"})); }
+setInterval(tick,1000);
 function memo(s){ var m=h("div",{cls:"memo"});
-  m.appendChild(h("dl",{cls:"mhead"},[h("dt",{text:"PM"}),h("dd",{cls:"subj",text:s.subj}),h("dt",{text:"Från"}),h("dd",{text:s.from}),h("dt",{text:"Till"}),h("dd",{text:"Ekonomiavdelningen, grupp "+st.grp})]));
+  m.appendChild(h("div",{cls:"from"},[avatar(s.from),h("div",{cls:"who"},[h("b",{text:"Från "+s.from.charAt(0).toLowerCase()+s.from.slice(1)}),h("span",{text:"Till ekonomiavdelningen, grupp "+st.grp})]),h("span",{cls:"pill",text:"Nytt"})]));
+  m.appendChild(h("h2",{cls:"subj",text:s.subj}));
   s.body.forEach(function(p){ m.appendChild(h("p",{text:p})); }); return m; }
+function factRow(k,v,old,isNew){ return h("div",{cls:"fr"+(isNew?" new":"")},[h("span",{cls:"k",text:k}),h("span",{cls:"v"},[h("span",{text:v}),old?h("span",{cls:"old",text:"tidigare "+old}):null])]); }
 function factsPanel(upto){
-  var box=h("aside",{cls:"card facts","aria-label":"Faktablad"},[h("h2",{text:"Faktablad"}),h("p",{cls:"help",text:"Nya uppgifter under seminariet står överst. Under dem finns grundcaset."})]);
-  var news=SEM.news(PAR).filter(function(g){return g.s<=upto;}), dl=h("dl"), any=false;
-  news.forEach(function(g){ g.items.forEach(function(it){ any=true; dl.appendChild(h("dt",{text:it[0]})); dl.appendChild(h("dd",null,[it[2]?h("s",{text:it[2]}):null,h("span",{cls:"new",text:it[1]})])); }); });
-  if(upto>=4){ any=true; dl.appendChild(h("dt",{text:"Vantrells bud"})); dl.appendChild(h("dd",null,[h("s",{text:"180 Mkr"}),h("span",{cls:"new",text:fmt(st.neg&&st.neg.started?st.neg.L:PAR.X,0)+" Mkr"})])); }
-  if(any) box.appendChild(h("div",{cls:"fg"},[h("h3",{text:"Nytt under seminariet"}),dl]));
-  if(upto>=4&&A("e3.d3")) box.appendChild(h("div",{cls:"fg"},[h("h3",{text:"Ert bindande beslut"}),h("p",{text:SEM.dText(PAR,A("e3.d3"))})]));
-  var dl2=h("dl"); BASEFACTS.forEach(function(it){ dl2.appendChild(h("dt",{text:it[0]})); dl2.appendChild(h("dd",{text:it[1]})); });
-  box.appendChild(h("div",{cls:"fg"},[h("h3",{text:"Grundcaset"}),dl2])); return box; }
+  var box=h("aside",{cls:"card facts","aria-label":"Faktablad"},[h("h2",{text:"Faktablad"})]);
+  var news=SEM.news(PAR).filter(function(g){return g.s<=upto;}), rows=h("div",{cls:"rowsf"}), any=false;
+  news.forEach(function(g){ g.items.forEach(function(it){ any=true; rows.appendChild(factRow(it[0],it[1],it[2],true)); }); });
+  if(upto>=4){ any=true; rows.appendChild(factRow("Vantrells bud",fmt(st.neg&&st.neg.started?st.neg.L:PAR.X,0)+" Mkr","180 Mkr",true)); }
+  if(any) box.appendChild(h("div",{cls:"fg"},[h("h3",{text:"Nytt under seminariet"}),rows]));
+  else box.appendChild(h("p",{cls:"help",text:"Här samlas de nya uppgifterna under seminariet. Just nu gäller grundcaset."}));
+  if(upto>=4&&A("e3.d3")) box.appendChild(h("div",{cls:"fg decided"},[h("h3",{text:"Ert bindande beslut"}),h("p",{text:SEM.dText(PAR,A("e3.d3"))})]));
+  var rows2=h("div",{cls:"rowsf"}); BASEFACTS.forEach(function(it){ rows2.appendChild(factRow(it[0],it[1])); });
+  var det=h("details",{cls:"base fg"},[h("summary",{text:"Grundcaset"}),rows2]); if(!any||window.innerWidth>=980) det.open=true;
+  box.appendChild(det); return box; }
 function fieldEl(s,f){
   var key=s.id+"."+f.id, id="f-"+s.id+"-"+f.id, wrap;
   function setv(v){ st.ans[key]=v; save(); }
@@ -529,16 +707,19 @@ function renderStart(){ var app=$("app"); app.textContent="";
   function go(){ var k=STARTH.indexOf(hash(c.value.trim().toLowerCase())); if(k<0){ msg.textContent="Seminariekoden stämmer inte. Läraren har den."; c.focus(); return; }
     st=fresh(); st.sem=k; st.grp=parseInt(g.value,10); st.members=m.value.trim(); st.step=1; save(); renderAll(); window.scrollTo(0,0); }
   btn.addEventListener("click",go); c.addEventListener("keydown",function(e){ if(e.key==="Enter") go(); });
-  app.appendChild(h("div",{cls:"card",style:"display:grid;gap:16px"},[h("h2",{text:"Så går det till"}),
-    h("ol",{cls:"how"},[h("li",{text:"Ta fram er inlämnade Excel-modell. Ni räknar vidare i den under seminariet."}),h("li",{text:"Först fyller ni i hur ni räknade i grundcaset. Sedan kommer nya uppgifter, och varje grupp har egna siffror."}),
-      h("li",{text:"Era beslut är bindande och får följder: det ni väljer i en etapp avgör vad ni har att räkna på i nästa."}),h("li",{text:"I etapp 4 förhandlar ni med Vantrell. Då behöver ni veta vad ert projekt är värt."}),
-      h("li",{text:"Svaren låses när ni går vidare. Ni får inget facit under tiden, men sist får ni se hur det gick."}),h("li",{text:"Ange belopp i miljoner kronor (Mkr) med en decimal. Etapperna tar ungefär 65 minuter."})]),
-    h("div",{cls:"startgrid"},[h("div",{cls:"fld"},[h("label",{"for":"scode",text:"Seminariekod (fås av läraren)"}),c]),h("div",{cls:"fld"},[h("label",{"for":"grp",text:"Gruppnummer"}),h("div",null,[g])]),h("div",{cls:"fld"},[h("label",{"for":"mem",text:"Gruppmedlemmar (valfritt)"}),m]),h("div",{cls:"go",style:"border-top:0;padding-top:0"},[btn,msg])])])); }
-
+  app.appendChild(h("section",{cls:"hero"},[
+    h("div",null,[h("h1",{text:"Ni är Lindhavens ekonomiavdelning."}),
+      h("p",{cls:"lead",text:"Tabletten LH-201 är klar för lansering, och ett internationellt läkemedelsbolag vill köpa den. Under seminariet kommer nya uppgifter in. Ni räknar i er egen modell, fattar beslut som inte går att ångra och får till sist se hur det gick."}),
+      h("ol",{cls:"how"},[h("li",{text:"Ta fram er inlämnade Excel-modell. Ni räknar vidare i den."}),h("li",{text:"Börja med att fylla i hur ni räknade i grundcaset."}),
+        h("li",{text:"Nya meddelanden kommer i fyra etapper. Varje grupp har egna siffror."}),h("li",{text:"Era beslut låses. Det ni väljer i en etapp avgör vad ni räknar på i nästa."}),
+        h("li",{text:"I etapp 4 förhandlar ni med köparen. Sist spelas tio till tjugo år upp, år för år."})])]),
+    h("div",{cls:"card join"},[h("h2",{text:"Starta er grupp"}),
+      h("div",{cls:"startgrid"},[h("div",{cls:"fld"},[h("label",{"for":"scode",text:"Seminariekod från läraren"}),c]),h("div",{cls:"fld"},[h("label",{"for":"grp",text:"Gruppnummer"}),h("div",null,[g])]),h("div",{cls:"fld"},[h("label",{"for":"mem",text:"Gruppmedlemmar (valfritt)"}),m]),h("div",{cls:"go",style:"border-top:0;padding-top:0"},[btn,msg])]),
+      h("p",{cls:"pass",text:"Ange belopp i Mkr med en decimal. Etapperna tar ungefär 65 minuter, och klockan uppe till höger visar riktmärket för varje etapp."})])])); }
 function lockButton(label,onLock){ var btn=h("button",{cls:"btn primary",type:"submit",text:label}), armed=false;
   return {btn:btn,disarm:function(){ if(armed){ armed=false; btn.className="btn primary"; btn.textContent=label; } },fire:function(){ if(!armed){ armed=true; btn.className="btn primary armed"; btn.textContent="Bekräfta: svaren kan inte ändras sedan"; return; } onLock(); }}; }
-function stageShell(idx,s,inner,rules){ var app=$("app"); app.textContent="";
-  var stage=h("div",{cls:"stage"},[h("div",{cls:"card"},[memo(s)]),h("div",{cls:"card",style:"display:grid;gap:16px"},[h("div",{cls:"qhead"},[h("h2",{text:"Etapp "+(idx+1)+" av "+STAGES.length+": "+(s.custom?"förhandla":"ta ställning")}),h("span",{cls:"time",text:"Ungefär "+s.min+" minuter"})]),h("div",{cls:"rules",text:rules}),inner]),prevStages(idx)]);
+function stageShell(idx,s,inner,rules){ var app=$("app"); app.textContent=""; st.seen=st.seen||[]; var isNew=st.seen.indexOf(idx)<0; if(isNew){ st.seen.push(idx); save(); }
+  var stage=h("div",{cls:"stage"},[h("div",{cls:"card"+(isNew?" arrive":"")},[memo(s)]),h("div",{cls:"card",style:"display:grid;gap:16px"},[h("div",{cls:"qhead"},[h("h2",{text:"Etapp "+(idx+1)+" av "+STAGES.length+": "+(s.custom?"förhandla":"ta ställning")}),h("span",{cls:"time",text:"Ungefär "+s.min+" minuter"})]),h("div",{cls:"rules",text:rules}),inner]),prevStages(idx)]);
   app.appendChild(h("div",{cls:"sim two"},[stage,factsPanel(idx+1)])); }
 function renderStage(){ var idx=st.step-1, s=STAGES[idx]; if(s.custom==="neg") return renderNeg(idx,s);
   var form=h("form",{cls:"q",novalidate:"novalidate"}); s.fields.forEach(function(f){ form.appendChild(fieldEl(s,f)); });
@@ -566,8 +747,8 @@ function renderNeg(idx,s){ var N=st.neg, inner=h("div",{style:"display:grid;gap:
     inner.appendChild(form);
   } else {
     inner.appendChild(h("div",{cls:"negtop"},[h("div",null,[h("div",{cls:"k",text:N.done?(N.deal?"Affären är klar":(N.withdrawn?"Budet är tillbakadraget":"Ni tackade nej till")):"Vantrells bud just nu"}),h("div",{cls:"v num",text:N.done&&N.deal?fmt(N.price,0)+" Mkr":(N.withdrawn?"–":fmt(N.L,0)+" Mkr")})]),
-      h("div",null,[h("div",{cls:"k",text:"Motbud kvar"}),h("div",{cls:"v num",text:String(Math.max(0,3-N.n))})]),h("div",null,[h("div",{cls:"k",text:"Ert lägsta acceptabla bud"}),h("div",{cls:"v num",text:numText(A("e4.bud"),"Mkr")})])]));
-    var log=h("ol",{cls:"neglog"}); N.log.forEach(function(e){ log.appendChild(h("li",{cls:e.who},[h("b",{text:e.who==="vi"?"Ni":"Vantrell"}),h("span",{text:e.text})])); }); inner.appendChild(log);
+      h("div",null,[h("div",{cls:"k",text:"Motbud kvar"}),h("div",{cls:"v num",text:String(Math.max(0,3-N.n))}),h("div",{cls:"pips","aria-hidden":"true"},[0,1,2].map(function(i){return h("i",{cls:i<N.n?"used":""});}))]),h("div",null,[h("div",{cls:"k",text:"Ert lägsta acceptabla bud"}),h("div",{cls:"v num",text:numText(A("e4.bud"),"Mkr")})])]));
+    var log=h("ol",{cls:"neglog"}); N.log.forEach(function(e,i){ var me=e.who==="vi"; log.appendChild(h("li",{cls:e.who+(i===N.freshAt&&!me?" fresh":"")},[me?null:avatar("Vantrell","#7a2e8c"),h("b",{text:me?"Ni":"Vantrell Pharma"}),h("div",{cls:"txt"},[h("span",{text:e.text})])])); }); delete N.freshAt; inner.appendChild(log);
     if(!N.done){
       var inp=h("input",{id:"negbid",type:"text",inputmode:"decimal",autocomplete:"off","aria-label":"Motbud i Mkr"}), m2=h("span",{cls:"msg",role:"status"}), warned=false;
       var bCounter=h("button",{cls:"btn",type:"button",text:"Lägg motbud"}), bAcc=h("button",{cls:"btn",type:"button",text:"Acceptera "+fmt(N.L,0)+" Mkr"}), bOut=h("button",{cls:"btn",type:"button",text:"Avbryt och investera"}), arm=null;
@@ -577,7 +758,7 @@ function renderNeg(idx,s){ var N=st.neg, inner=h("div",{style:"display:grid;gap:
       inp.addEventListener("input",function(){ warned=false; m2.textContent=""; });
       bCounter.addEventListener("click",function(){ var a=parseNum(inp.value); if(isNaN(a)||a<=0||a>3000){ m2.textContent="Skriv ett motbud i Mkr."; return; }
         if(a<=N.L&&!warned){ warned=true; m2.textContent="Motbudet är inte högre än Vantrells bud. De accepterar direkt. Klicka igen för att ändå lägga det."; return; }
-        negCounter(a); save(); renderAll(); });
+        negCounter(a); st.neg.freshAt=st.neg.log.length-1; save(); renderAll(); });
       if(N.n>=3) inner.appendChild(h("p",{cls:"rules",text:"Motbuden är slut. Acceptera Vantrells sista bud eller avbryt och investera."}));
       else inner.appendChild(h("div",{cls:"negact"},[h("div",{cls:"numrow"},[inp,h("span",{text:"Mkr"}),bCounter]),m2]));
       inner.appendChild(h("div",{cls:"go"},[bAcc,bOut]));
@@ -613,14 +794,19 @@ function renderOutcomeChart(host,O,k){ var W=Math.max(300,host.clientWidth), H=W
 function cardText(){ var L=["Lindhaven investeringssimulator: svarskort","Seminarium "+SEM.id+" ("+SEM.name+"), grupp "+st.grp+(st.members?": "+st.members:""),""];
   STAGES.forEach(function(s,i){ L.push("ETAPP "+(i+1)+": "+s.subj); s.fields.forEach(function(f){ if(f.t==="cls") CLSITEMS.forEach(function(it){ L.push("- "+it[1]+": "+optLabel(CLS,A(s.id+"."+f.id+"."+it[0]))); }); else L.push("- "+f.label+" "+ansText(s,f)); }); if(s.custom==="neg") L.push("- Förhandlingens resultat: "+negSummary()); L.push(""); });
   return L.join("\n"); }
+var PLAY=null; function stopPlay(){ if(PLAY){ clearInterval(PLAY); PLAY=null; } }
+function outHead(O,k){ var R=O.real[O.show].cum[k], P=O.plan[O.show].cum[k];
+  function cell(lab,val,cls){ return h("div",null,[h("div",{cls:"k",text:lab}),h("div",{cls:"v"+(cls?" "+cls:""),text:val})]); }
+  return h("div",{cls:"outhead"},[cell("År",k+" av "+O.n),cell("Ackumulerat nuvärde, utfall",sgn(R,0)+" Mkr",R>=0?"pos":"neg"),cell("Enligt er kalkyl",sgn(P,0)+" Mkr"),cell("Skillnad",sgn(R-P,0)+" Mkr",R-P>=0?"pos":"neg")]); }
 function renderDone(){ var app=$("app"); app.textContent=""; var O=outcome(), k=clamp(st.outK||0,0,O.n), done=k>=O.n;
   var chart=h("div",{cls:"chart",id:"outChart"}), ev=h("ol",{cls:"events"});
-  SEM.world.forEach(function(e){ if(e.y<=k) ev.appendChild(h("li",null,[h("b",{text:"År "+e.y}),h("span",{text:e.text})])); }); if(!ev.children.length) ev.appendChild(h("li",null,[h("b",{text:"År "+k}),h("span",{text:k===0?"Investeringarna är gjorda. Stega fram för att se vad som händer.":"Inga nya händelser ännu."})]));
-  var bNext=h("button",{cls:"btn primary",type:"button",text:"Nästa år"}), bAll=h("button",{cls:"btn",type:"button",text:"Visa hela utfallet"});
-  bNext.addEventListener("click",function(){ st.outK=k+1; save(); renderDone(); }); bAll.addEventListener("click",function(){ st.outK=O.n; save(); renderDone(); });
+  SEM.world.slice().reverse().forEach(function(e){ if(e.y<=k) ev.appendChild(h("li",{cls:e.y===k?"fresh":null},[h("b",{text:"År "+e.y}),h("span",{text:e.text})])); }); if(!ev.children.length) ev.appendChild(h("li",null,[h("b",{text:"År "+k}),h("span",{text:k===0?"Investeringarna är gjorda. Stega fram för att se vad som händer.":"Inga nya händelser ännu."})]));
+  var bPlay=h("button",{cls:"btn primary",type:"button",text:PLAY?"Pausa":"Spela upp år för år"}), bNext=h("button",{cls:"btn",type:"button",text:"Ett år framåt"}), bAll=h("button",{cls:"btn",type:"button",text:"Hoppa till slutet"});
+  bNext.addEventListener("click",function(){ stopPlay(); st.outK=k+1; save(); renderDone(); }); bAll.addEventListener("click",function(){ stopPlay(); st.outK=O.n; save(); renderDone(); });
+  bPlay.addEventListener("click",function(){ if(PLAY){ stopPlay(); renderDone(); return; } PLAY=setInterval(function(){ var O2=outcome(); if((st.outK||0)>=O2.n){ stopPlay(); renderDone(); return; } st.outK=(st.outK||0)+1; save(); renderDone(); },900); renderDone(); });
   var what=O.chosen==="sell"?"Ni sålde till Vantrell. Diagrammet visar vad som hade hänt om ni i stället hade investerat enligt alternativ "+O.show+".":"Ni investerade enligt alternativ "+O.show+". Diagrammet visar hur det gick, år för år.";
   var leg=h("div",{cls:"legend"}); [["var(--s-a)","Utfall, alternativ "+O.show],["var(--muted)","Enligt kalkylen"]].concat(O.sell!=null?[["var(--s-b)","Sälja till Vantrell för "+fmt(O.Dref,0)+" Mkr"]]:[]).forEach(function(x){ var i=h("i"); i.style.background=x[0]; leg.appendChild(h("span",null,[i,x[1]])); });
-  var card=h("div",{cls:"card",style:"display:grid;gap:14px"},[h("div",{cls:"qhead"},[h("h2",{text:"Så gick det"}),h("span",{cls:"time",text:"År "+k+" av "+O.n})]),h("p",{cls:"pdesc",text:what+" Alla grupper i seminariet möter samma framtid."}),leg,chart,ev,done?null:h("div",{cls:"go"},[bNext,bAll])]);
+  var card=h("div",{cls:"card",style:"display:grid;gap:14px"},[h("div",{cls:"qhead"},[h("h2",{text:"Så gick det"}),h("span",{cls:"time",text:"År "+k+" av "+O.n})]),h("p",{cls:"pdesc",text:what+" Alla grupper i seminariet möter samma framtid."}),outHead(O,k),done?null:h("div",{cls:"go",style:"border-top:0;padding-top:0"},[bPlay,bNext,bAll]),leg,chart,ev]);
   if(done){ var tb=h("tbody"), vals=[]; if(O.sell!=null) vals.push({k:"sell",name:"Sälja till Vantrell för "+fmt(O.Dref,0)+" Mkr",low:"en försäljning till Vantrell",p:O.sell,r:O.sell}); O.al.forEach(function(a){ vals.push({k:a,name:"Investera enligt a"+ALTNAME[a].slice(1),low:"alternativ "+a,p:O.plan[a].npv,r:O.real[a].npv}); });
     var bestP=vals.slice().sort(function(a,b){return b.p-a.p;})[0], bestR=vals.slice().sort(function(a,b){return b.r-a.r;})[0], mine=vals.filter(function(v){return v.k===O.chosen;})[0];
     vals.forEach(function(v){ tb.appendChild(h("tr",v.k===O.chosen?{cls:"strong"}:null,[h("td",{text:v.name+(v.k===O.chosen?" (ert val)":"")}),h("td",{cls:"n",text:sgn(v.p,0)}),h("td",{cls:"n",text:sgn(v.r,0)}),h("td",{text:(v===bestP?"Bäst enligt kalkylen":"")+(v===bestP&&v===bestR?", ":"")+(v===bestR?"Bäst i efterhand":"")})])); });
@@ -632,10 +818,10 @@ function renderDone(){ var app=$("app"); app.textContent=""; var O=outcome(), k=
   if(done){ var tb2=h("tbody"); STAGES.forEach(function(s,i){ tb2.appendChild(h("tr",{cls:"sh"},[h("td",{colspan:"2",text:"Etapp "+(i+1)+": "+s.subj})])); answerRows(s,tb2); });
     var out=h("textarea",{rows:8,readonly:"readonly","aria-label":"Svarskortet som text"}); out.hidden=true; var cmsg=h("span",{cls:"help",role:"status"}), copy=h("button",{cls:"btn",type:"button",text:"Kopiera svarskortet som text"});
     copy.addEventListener("click",function(){ var t=cardText(); function fallback(){ out.hidden=false; out.value=t; out.focus(); out.select(); cmsg.textContent="Markera texten och kopiera den."; } try{ navigator.clipboard.writeText(t).then(function(){cmsg.textContent="Kopierat.";},fallback); }catch(e){ fallback(); } });
-    app.appendChild(h("div",{cls:"card",style:"display:grid;gap:14px;margin-top:16px"},[h("div",{cls:"qhead"},[h("h2",{text:"Svarskort för grupp "+st.grp}),h("span",{cls:"time",text:"Seminarium "+SEM.id+(st.members?" · "+st.members:"")})]),
+    app.appendChild(h("div",{cls:"card",style:"display:grid;gap:14px;margin-top:16px"},[h("div",{cls:"qhead"},[h("h2",{text:"Svarskort för grupp "+st.grp}),h("span",{cls:"time",text:"Seminarium "+SEM.id+(st.members?", "+st.members:"")})]),
       h("p",{cls:"rules",text:"Svaren är låsta. Vänta på den gemensamma genomgången, där ni jämför era svar med en möjlig lösning och diskuterar antagandena bakom den."}),h("div",{cls:"go",style:"border-top:0;padding-top:0"},[copy,cmsg]),out,h("div",{cls:"tablewrap"},[h("table",{cls:"ans"},[h("thead",null,[h("tr",null,[h("th",{text:"Fråga"}),h("th",{text:"Ert låsta svar"})])]),tb2])])])); }
   renderOutcomeChart(chart,O,k); }
-function renderAll(){ setup(); renderSteps(); if(st.step===0||!SEM) renderStart(); else if(st.step<=STAGES.length) renderStage(); else renderDone(); if(st.unlocked&&SEM) renderDisc(); else { $("disc").hidden=true; $("gate").hidden=false; } }
+function renderAll(){ if(st.step<=STAGES.length) stopPlay(); setup(); renderSteps(); if(st.step===0||!SEM) renderStart(); else if(st.step<=STAGES.length) renderStage(); else renderDone(); if(st.unlocked&&SEM) renderDisc(); else { $("disc").hidden=true; $("gate").hidden=false; } }
 (function(){ var b=$("restart"), armed=false, t=0; b.addEventListener("click",function(){ if(!armed){ armed=true; b.textContent="Bekräfta: alla svar raderas"; t=setTimeout(function(){armed=false; b.textContent="Börja om";},5000); return; }
   clearTimeout(t); armed=false; b.textContent="Börja om"; st=fresh(); save(); renderAll(); window.scrollTo(0,0); }); })();
 window.addEventListener("resize",function(){ if(SEM&&st.step>STAGES.length&&$("outChart")){ var O=outcome(); renderOutcomeChart($("outChart"),O,clamp(st.outK||0,0,O.n)); } });
