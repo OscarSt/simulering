@@ -383,6 +383,26 @@ table.val td.barcell i{display:block;height:12px;border-radius:6px}
 .tablewrap.tall td:first-child,.tablewrap.tall th:first-child{white-space:nowrap}
 td .why{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;max-width:60ch}
 .teachpick{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:10px}
+.timer .l.tot{color:var(--hud-ink);opacity:.8}
+.timer .l.tot.late{color:#ff9d8f;opacity:1}
+.time.warnrun{color:var(--bad);font-weight:600}
+ol.pres{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:p}
+ol.pres li{counter-increment:p;display:grid;grid-template-columns:30px minmax(0,1fr);gap:2px 10px}
+ol.pres li::before{content:counter(p);grid-row:span 2;font-family:var(--f-display);font-weight:700;color:var(--accent);border:1.5px solid var(--accent);border-radius:50%;width:26px;height:26px;display:grid;place-items:center;font-size:14px}
+ol.pres li b{font-weight:600}
+ol.pres li span{color:var(--ink-2);max-width:70ch}
+.presrow{display:flex;gap:12px;align-items:center}
+.presclock{font-family:var(--f-display);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.presclock.low{color:#b07a00} .presclock.over{color:var(--bad)}
+.neglog li.fresh{animation:revealTxt .01s var(--d,0s) both}
+.neglog li.fresh .txt>span{animation:revealTxt .01s calc(1.1s + var(--d,0s)) both}
+.neglog li.fresh .txt::after{animation:typing 1.1s steps(3,end) var(--d,0s) both}
+table.live td{white-space:normal;text-align:left;vertical-align:top}
+table.live td:first-child{white-space:nowrap}
+table.live .tag{margin-left:6px}
+table.live .btn.quiet{padding:0}
+.devlist{margin:4px 0 0;padding-left:16px;font-size:12.5px;color:var(--ink-2);max-width:46ch}
+@media (max-width:620px){ thead th{white-space:normal} th,td{padding:5px 6px} }
 </style>
 
 
@@ -403,7 +423,7 @@ td .why{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;max-wid
       <button class="btn" id="codeBtn" type="button">Öppna genomgången</button>
       <span class="msg" id="codeMsg" role="status"></span>
     </div>
-    <p>Undervisningscaset Lindhaven Pharma AB är påhittat, liksom köparen Vantrell Pharma och alla siffror och bud. Svaren sparas bara i den här webbläsaren och skickas inte till läraren. Kopiera svarskortet i slutet om ni ska lämna in det.</p>
+    <p id="foot"></p>
   </footer>
 </div>
 
@@ -496,9 +516,11 @@ var SEMS=[
  dText:function(p,d){return d==="ja"?"Patentavtalet är tecknat: "+fmt(p.Y,0)+" Mkr år 10, produktionen avslutas då":"Inget patentavtal";},
  news:function(p){return [{s:2,items:[["Pris per förpackning",fmt(p.P,0)+" kr","1 500 kr"]]},{s:3,items:[["Patentbud år 10, om produktionen då avslutas",fmt(p.Y,0)+" Mkr","180 Mkr"]]}];},
  ovHead:["Nytt pris (kr)","Patentbud (Mkr)"], ovRow:function(p){return [fmt(p.P,0),fmt(p.Y,0)];}, dName:"Patentavtal",
- world:[{y:2,pris:0.985,text:"TLV omprövar subventionen för hela läkemedelsgruppen. Priset faller 1,5 %."},{y:6,mat:0.97,text:"En ny leverantör av den aktiva substansen sänker råvarukostnaden 3 %."},{y:11,pris:0.95,vol:0.9,text:"En konkurrent lanserar en tablett som bara behöver tas en gång i veckan. Priset faller 5 % och volymen 10 %."}],
+ world2:[{y:3,vol:0.96,text:"En konkurrent får sin tablett godkänd tidigare än väntat. Volymen faller 4 %."},{y:7,pris:1.02,text:"Tabletten godkänns även för typ 2-diabetes. Priset stiger 2 %."},{y:12,mat:1.05,text:"Nya miljökrav på tillverkningen höjer råvarukostnaden 5 %."}],
+ world3:[{y:2,mat:1.04,text:"Leverantören av den aktiva substansen höjer priset. Råvarukostnaden stiger 4 %."},{y:5,pris:0.98,text:"Flera länder inför gemensamma referenspriser. Priset faller 2 %."},{y:13,pris:1.03,text:"Långtidsdata visar färre hjärtinfarkter bland patienterna. Priset stiger 3 %."}],
+  world:[{y:2,pris:0.985,text:"TLV omprövar subventionen för hela läkemedelsgruppen. Priset faller 1,5 %."},{y:6,mat:0.97,text:"En ny leverantör av den aktiva substansen sänker råvarukostnaden 3 %."},{y:11,pris:0.95,vol:0.9,text:"En konkurrent lanserar en tablett som bara behöver tas en gång i veckan. Priset faller 5 % och volymen 10 %."}],
  stage2:function(p){ var S=this, st=function(b){return S.s2(b,p);};
-  return {from:"Säljchefen",subj:"Priset pressas i de första upphandlingarna", min:12,
+  return {from:"Säljchefen",subj:"Priset pressas i förhandlingarna", min:12,
    body:["Sedan ni lämnade in er kalkyl har en konkurrent fått sin tablett godkänd, och i prisförhandlingarna med TLV och de nordiska försäkringsbolagen pressas vi hårdare än väntat.",
          "Min bedömning är att vi får räkna med "+fmt(p.P,0)+" kr per förpackning i stället för 1 500 kr. Volymen står fast. Det nya priset gäller under resten av seminariet."],
    fields:npv3(st," med det nya priset").concat([
@@ -517,7 +539,9 @@ var SEMS=[
  dText:function(p,d){return d==="ja"?"Automatiseringen genomförs: "+fmt(p.I,0)+" Mkr extra år 0, lönerna "+fmt(p.s,1)+" Mkr lägre per år":"Ingen automatisering";},
  news:function(p){return [{s:2,items:[["Råvaror och tillverkning",fmt(130*(1+p.m/100),1)+" Mkr/år","130 Mkr/år"]]},{s:3,items:[["Automatisering: extra utrustning år 0",fmt(p.I,0)+" Mkr"],["Automatisering: lägre löner",fmt(p.s,1)+" Mkr/år"]]}];},
  ovHead:["Råvaror (%)","Automatisering (Mkr)","Lägre löner (Mkr/år)"], ovRow:function(p){return ["+"+fmt(p.m,1),fmt(p.I,0),fmt(p.s,1)];}, dName:"Automatisering",
- world:[{y:2,lon:1.02,text:"Det nya löneavtalet höjer lönerna 2 %."},{y:4,pris:1.015,text:"Fler länder subventionerar behandling mot fetma. Priset stiger 1,5 %."},{y:9,mat:0.96,text:"Råvarupriserna faller tillbaka 4 %."}],
+ world2:[{y:3,mat:1.03,text:"Brist på den aktiva substansen höjer råvarukostnaden 3 %."},{y:6,lon:0.98,text:"Ett nytt skiftschema sänker lönekostnaden 2 %."},{y:10,pris:0.97,text:"En konkurrent sänker sitt pris. Priset faller 3 %."}],
+ world3:[{y:2,pris:1.01,text:"Efterfrågan är större än väntat i de första länderna. Priset stiger 1 %."},{y:7,mat:0.95,text:"En andra leverantör av den aktiva substansen sänker råvarukostnaden 5 %."},{y:11,vol:0.94,text:"En veckotablett från en konkurrent tar marknadsandelar. Volymen faller 6 %."}],
+  world:[{y:2,lon:1.02,text:"Det nya löneavtalet höjer lönerna 2 %."},{y:4,pris:1.015,text:"Fler länder subventionerar behandling mot fetma. Priset stiger 1,5 %."},{y:9,mat:0.96,text:"Råvarupriserna faller tillbaka 4 %."}],
  stage2:function(p){ var S=this, st=function(b){return S.s2(b,p);};
   return {from:"Inköpschefen",subj:"Leverantörerna höjer priserna", min:12,
    body:["Leverantören av den aktiva substansen och vår kontraktstillverkare har aviserat högre priser. Kostnaden för råvaror och tillverkning blir "+fmt(p.m,1)+" % högre än i kalkylen, alltså "+fmt(130*(1+p.m/100),1)+" Mkr per år i stället för 130 Mkr.","Övriga kostnader ändras inte. De nya priserna gäller under resten av seminariet."],
@@ -538,7 +562,9 @@ var SEMS=[
  dText:function(p,d){return d==="ja"?"Ramavtalet är tecknat: 20 000 förpackningar per månad, pris "+fmt(p.P2,0)+" kr":"Inget ramavtal: volymen är "+fmt(p.v,0)+" förpackningar per månad";},
  news:function(p){return [{s:2,items:[["Försäljningsvolym",fmt(p.v,0)+" förp./mån","20 000 förp./mån"]]},{s:3,items:[["Ramavtal: garanterad volym","20 000 förp./mån"],["Ramavtal: pris per förpackning",fmt(p.P2,0)+" kr"]]}];},
  ovHead:["Volym (förp./mån)","Prissänkning i ramavtalet (%)"], ovRow:function(p){return [fmt(p.v,0),fmt(p.r,1)];}, dName:"Ramavtal",
- world:[{y:3,add:860,text:"Regionerna som sköt på beslutet börjar subventionera tabletten. Volymen ökar med 860 förpackningar per månad, som mest till produktionslinjens tak på 20 000."},{y:8,pris:0.98,text:"Prispress i nya upphandlingar. Priset faller 2 %."},{y:14,vol:0.93,text:"En stor försäkringsgivare byter till en konkurrents tablett. Volymen faller 7 % för dem som saknar ramavtal."}],
+ world2:[{y:2,add:500,text:"Två regioner inför subvention. Volymen ökar med 500 förpackningar per månad, som mest till produktionslinjens tak på 20 000."},{y:6,pris:0.985,text:"Regionerna förhandlar ner priset 1,5 %."},{y:12,vol:0.9,text:"En veckotablett från en konkurrent tar marknadsandelar. Volymen faller 10 % för dem som saknar ramavtal."}],
+ world3:[{y:4,add:1200,text:"Subventionen införs i hela landet. Volymen ökar med 1 200 förpackningar per månad, som mest till produktionslinjens tak på 20 000."},{y:9,mat:1.03,text:"Råvarukostnaden stiger 3 %."},{y:15,pris:0.97,text:"Prispress inför patentets utgång. Priset faller 3 %."}],
+  world:[{y:3,add:860,text:"Regionerna som sköt på beslutet börjar subventionera tabletten. Volymen ökar med 860 förpackningar per månad, som mest till produktionslinjens tak på 20 000."},{y:8,pris:0.98,text:"Prispress i nya upphandlingar. Priset faller 2 %."},{y:14,vol:0.93,text:"En stor försäkringsgivare byter till en konkurrents tablett. Volymen faller 7 % för dem som saknar ramavtal."}],
  stage2:function(p){ var S=this, st=function(b){return S.s2(b,p);};
   return {from:"Säljchefen",subj:"Subventionen dröjer i flera regioner", min:12,
    body:["Flera regioner har skjutit upp beslutet om att subventionera tabletten, och patienterna där får betala hela priset själva. Vi får räkna med "+fmt(p.v,0)+" förpackningar per månad i stället för 20 000 under hela perioden. Efter år 20 halveras försäljningen från den nya nivån. Priset står fast.","Ni behöver själva bedöma hur produktionskostnaderna påverkas när volymen blir lägre."],
@@ -559,7 +585,9 @@ var SEMS=[
  dText:function(p,d){return d==="ja"?"Snabbspåret är beställt: godkännandet kostar "+fmt(10+p.F,0)+" Mkr, försäljningen börjar år 1":"Förseningen accepteras: godkännandet kostar "+fmt(10+p.c,0)+" Mkr, försäljningen börjar år 2";},
  news:function(p){return [{s:2,items:[["Kalkylränta",fmt(p.w,2).replace(/0$/,"")+" %","6 %"]]},{s:3,items:[["Med försening: försäljningsstart","år 2","år 1"],["Med försening: godkännande",fmt(10+p.c,0)+" Mkr","10 Mkr"],["Med snabbspår: godkännande",fmt(10+p.F,0)+" Mkr","10 Mkr"]]}];},
  ovHead:["Kalkylränta (%)","Godkännande med försening (Mkr)","Godkännande snabbspår (Mkr)"], ovRow:function(p){return [fmt(p.w,2),fmt(10+p.c,0),fmt(10+p.F,0)];}, dName:"Snabbspår",
- world:[{y:3,mat:1.03,text:"Brist på den aktiva substansen höjer råvarukostnaden 3 %."},{y:5,pris:1.02,text:"Nya studier visar att tabletten minskar risken för hjärt-kärlsjukdom. Priset stiger 2 %."},{y:12,vol:0.95,text:"Efterfrågan mattas. Volymen faller 5 %."}],
+ world2:[{y:2,pris:0.985,text:"Prisförhandlingarna går sämre än väntat. Priset faller 1,5 %."},{y:6,vol:0.96,text:"En konkurrerande tablett lanseras. Volymen faller 4 %."},{y:10,mat:0.96,text:"Råvarupriserna faller 4 %."}],
+ world3:[{y:4,lon:1.03,text:"Det nya löneavtalet höjer lönerna 3 %."},{y:8,pris:1.025,text:"Tabletten godkänns för en ny patientgrupp. Priset stiger 2,5 %."},{y:13,vol:0.93,text:"Efterfrågan mattas. Volymen faller 7 %."}],
+  world:[{y:3,mat:1.03,text:"Brist på den aktiva substansen höjer råvarukostnaden 3 %."},{y:5,pris:1.02,text:"Nya studier visar att tabletten minskar risken för hjärt-kärlsjukdom. Priset stiger 2 %."},{y:12,vol:0.95,text:"Efterfrågan mattas. Volymen faller 5 %."}],
  stage2:function(p){ var S=this, st=function(b){return S.s2(b,p);}, w=fmt(p.w,2).replace(/0$/,"");
   return {from:"Finanschefen",subj:"Styrelsen höjer kalkylräntan", min:12,
    body:["Räntorna har stigit, och banken ser ett enskilt utvecklingsprojekt som mer riskfyllt än vår övriga verksamhet.","Styrelsen har därför beslutat att projektet ska bedömas med en kalkylränta på "+w+" % i stället för 6 %. Den nya kalkylräntan gäller under resten av seminariet."],
@@ -575,14 +603,16 @@ var SEMS=[
 }];
 function lowBidD(S,p,b,d){ var o=S.after(b,p,d), al=S.alts(d); return bisect(function(x){return topOf(withO(o,{bid:x}),al);},0,3000); }
 function semPar0(S,i){ var p=S.par(i), sb=solBase(true), vy=lowBidD(S,p,sb,"ja"), vn=lowBidD(S,p,sb,"nej"); p.dopt=vy>vn?"ja":"nej"; p.Vopt=Math.max(vy,vn);
-  p.X=r5(p.Vopt+gv(OFF,i,function(){return -55+5*Math.floor(U(S.id,i,"o")*15);})); if(p.X===180) p.X=185; p.gap=gv(GAP,i,function(){return 30+5*Math.floor(U(S.id,i,"g")*7);}); p.R=p.X+p.gap; p.margin=Math.abs(vy-vn); return p; }
+  p.X=r5(p.Vopt+gv(OFF,i,function(){return -55+5*Math.floor(U(S.id,i,"o")*15);})); if(p.X===180) p.X=185; p.gap=gv(GAP,i,function(){return 30+5*Math.floor(U(S.id,i,"g")*7);}); p.R=p.X+p.gap; p.margin=Math.abs(vy-vn);
+  p.conc=[0,1,2].map(function(k){return 0.35+0.05*Math.floor(U(S.id,i,"c"+k)*7);}); p.rival=U(S.id,i,"rv")<0.5?{round:U(S.id,i,"rr")<0.5?1:2}:null; return p; }
 /* alla gruppers siffror tas fram en gång per seminarium: varje grupp får en egen uppsättning, och beslutet i etapp 3 ska göra minst 3 Mkr skillnad */
 var PARC={};
 function semPar(S,i){ if(!PARC[S.id]){ var arr=[], seen={}; for(var j=0;j<NG;j++){ var p=null, key="";
       for(ATT=0;ATT<60;ATT++){ p=semPar0(S,j); key=S.ovRow(p).join("|"); if(!seen[key]&&p.margin>=3) break; }
       seen[key]=1; arr.push(p); } ATT=0; PARC[S.id]=arr; }
   return PARC[S.id][i]; }
-function reach(p){ var L=p.X; for(var k=0;k<3;k++) L=Math.round(L+0.5*(p.R-L)); return L; }
+function rivalBid(L,R){ return Math.round(L+0.4*(R-L)); }
+function reach(p){ var L=p.X; for(var k=0;k<3;k++){ L=Math.round(L+(p.conc?p.conc[k]:0.5)*(p.R-L)); if(p.rival&&p.rival.round===k+1) L=Math.max(L,Math.min(p.R,rivalBid(L,p.R)+5)); } return L; }
 /* ================================================================ gemensamma etapper */
 var CLS=[["ut","Utbetalning år 0"],["in","Inbetalning eller besparing år 0"],["alt","Alternativkostnad år 0"],["nej","Tas inte med"]];
 var CLSITEMS=[["fou","Nedlagd forskning och utveckling",120],["fardig","Slutföra utveckling och uppskalning",90],["konsult","Konsultarvode för marknadsanalysen",3],["mask","Produktionslinje",60],["cert","Godkännande, juridik och kvalitetstester",10],["lock","Uppköpsbudet",180],["upps","Uppsägningskostnad för personalen",7]];
@@ -616,6 +646,14 @@ function fresh(){ return {step:0,sem:null,grp:1,members:"",ans:{},neg:null,outK:
 var st=fresh();
 try{ var raw=localStorage.getItem(KEY); if(raw){ var o0=JSON.parse(raw); if(o0&&typeof o0==="object"&&o0.ans) st=o0; } }catch(e){}
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(st)); }catch(e){} }
+/* antal starter per seminarium i den här webbläsaren. Ligger utanför svaren och nollställs inte av Börja om. */
+var RUNKEY="lindhaven-sim-runs", CLIENTKEY="lindhaven-sim-client";
+function bumpRun(k){ var r={}; try{ r=JSON.parse(localStorage.getItem(RUNKEY)||"{}")||{}; }catch(e){} r[k]=(r[k]||0)+1; try{ localStorage.setItem(RUNKEY,JSON.stringify(r)); }catch(e){} return r[k]; }
+function runTxt(){ return (st.run||1)>1?"försök "+st.run:""; }
+function clientId(){ var id=null; try{ id=localStorage.getItem(CLIENTKEY); }catch(e){} if(!id){ id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g,function(){return Math.floor(Math.random()*16).toString(16);}); try{ localStorage.setItem(CLIENTKEY,id); }catch(e){} } return id; }
+/* samma händelseförlopp för alla grupper under en termin, nytt förlopp nästa termin */
+function termVariant(){ var d=new Date(); return (d.getFullYear()*2+(d.getMonth()>=6?1:0))%3; }
+function worldOf(S){ var v=st.wv==null?termVariant():st.wv; return [S.world,S.world2,S.world3][v%3]||S.world; }
 function A(k){ return st.ans[k]; }
 function optLabel(opts,v){ for(var i=0;i<opts.length;i++) if(opts[i][0]===v) return opts[i][1]; return ""; }
 var SEM=null, PAR=null, STAGES=[], SH={1:["Prispress","Patentbud"],2:["Råvarupriser","Automatisering"],3:["Lägre volym","Ramavtal"],4:["Kalkylränta","Godkännande"]};
@@ -634,7 +672,7 @@ function decisionChips(){ var out=[]; if(!SEM) return out;
   return out; }
 function renderSteps(){ var ol=$("steps"), sub=$("hudSub"), dc=$("decisions"); ol.textContent=""; dc.textContent="";
   if(st.step===0||!SEM){ ol.hidden=true; dc.hidden=true; sub.textContent="Investeringssimulering"; tick(); return; }
-  ol.hidden=false; sub.textContent="Seminarium "+SEM.id+": "+SEM.name.toLowerCase()+", grupp "+st.grp;
+  ol.hidden=false; sub.textContent="Seminarium "+SEM.id+": "+SEM.name.toLowerCase()+", grupp "+st.grp+(runTxt()?", "+runTxt():"");
   STAGES.forEach(function(s,i){ var n=i+1, cls=n<st.step?"done":(n===st.step?"now":""); ol.appendChild(h("li",{cls:cls,"aria-current":n===st.step?"step":null},[h("b",{text:String(n)}),s.short])); });
   ol.appendChild(h("li",{cls:st.step>STAGES.length?"now":""},[h("b",{text:"✓"}),"Utfallet"]));
   var ch=decisionChips(); st.stamps=st.stamps||[];
@@ -645,7 +683,8 @@ function tick(){ var el=$("timer"); if(!el) return; if(!SEM||st.step<1||st.step>
   var s=stageOf(st.step); st.t0=st.t0||{}; if(!st.t0[st.step]){ st.t0[st.step]=Date.now(); save(); }
   var left=Math.round(s.min*60-(Date.now()-st.t0[st.step])/1000), a=Math.abs(left), mm=Math.floor(a/60), ss=a%60;
   el.hidden=false; el.className="timer"+(left<0?" over":(left<180?" low":""));
-  el.textContent=""; el.appendChild(h("span",{cls:"t",text:(left<0?"+":"")+mm+":"+(ss<10?"0":"")+ss})); el.appendChild(h("span",{cls:"l",text:left<0?"över riktmärket":"kvar av etappen"})); }
+  el.textContent=""; el.appendChild(h("span",{cls:"t",text:(left<0?"+":"")+mm+":"+(ss<10?"0":"")+ss})); el.appendChild(h("span",{cls:"l",text:left<0?"över riktmärket":"kvar av etappen"}));
+  if(st.tStart){ var tot=STAGES.reduce(function(a,x){return a+x.min;},0)+5, tl=Math.round(tot-(Date.now()-st.tStart)/60000); el.appendChild(h("span",{cls:"l tot"+(tl<0?" late":""),text:tl>=0?tl+" min kvar totalt":(-tl)+" min över totalt"})); } }
 setInterval(tick,1000);
 function memo(s){ var m=h("div",{cls:"memo"});
   m.appendChild(h("div",{cls:"from"},[avatar(s.from),h("div",{cls:"who"},[h("b",{text:"Från "+s.from.charAt(0).toLowerCase()+s.from.slice(1)}),h("span",{text:"Till ekonomiavdelningen, grupp "+st.grp})]),h("span",{cls:"pill",text:"Nytt"})]));
@@ -714,7 +753,7 @@ function renderStart(){ var app=$("app"); app.textContent="";
   for(var i=1;i<=NG;i++) g.appendChild(h("option",{value:String(i),text:"Grupp "+i})); g.value=String(st.grp||1); m.value=st.members||"";
   var btn=h("button",{cls:"btn primary",type:"button",text:"Starta seminariet"});
   function go(){ var k=STARTH.indexOf(hash(c.value.trim().toLowerCase())); if(k<0){ msg.textContent="Seminariekoden stämmer inte. Läraren har den."; c.focus(); return; }
-    st=fresh(); st.sem=k; st.grp=parseInt(g.value,10); st.members=m.value.trim(); st.step=1; save(); renderAll(); window.scrollTo(0,0); }
+    st=fresh(); st.sem=k; st.grp=parseInt(g.value,10); st.members=m.value.trim(); st.step=1; st.code=c.value.trim().toLowerCase(); st.tStart=Date.now(); st.wv=termVariant(); st.run=bumpRun(k); save(); renderAll(); window.scrollTo(0,0); }
   btn.addEventListener("click",go); c.addEventListener("keydown",function(e){ if(e.key==="Enter") go(); });
   app.appendChild(h("section",{cls:"hero"},[
     h("div",null,[h("h1",{text:"Ni är Lindhavens ekonomiavdelning."}),
@@ -740,13 +779,17 @@ function renderStage(){ var idx=st.step-1, s=STAGES[idx]; if(s.custom==="neg") r
   stageShell(idx,s,form,idx===0?"Fyll i svaren från er inlämnade lösning. Svaren rättas inte här. De låses när ni går vidare.":"Räkna om i er Excel-modell och ange belopp i Mkr med en decimal. Svaren rättas inte här. De låses när ni går vidare."); }
 
 /* ---------------------------------------------------------------- förhandlingen */
-function negCounter(a){ var N=st.neg, R=PAR.R, g=PAR.gap; N.log.push({who:"vi",text:"Vårt motbud är "+fmt(a,0)+" Mkr."}); N.n++;
+function negCounter(a){ var N=st.neg, R=PAR.R, g=PAR.gap; N.L0=N.L; N.log.push({who:"vi",text:"Vårt motbud är "+fmt(a,0)+" Mkr."}); N.n++;
   if(a<=N.L){ N.done=true; N.deal=true; N.price=a; N.log.push({who:"lm",text:"Vi accepterar "+fmt(a,0)+" Mkr."}); return; }
   var last=N.n>=3;
   if(a>R+1.5*g){ N.strikes++; if(N.strikes>=2){ N.done=true; N.deal=false; N.withdrawn=true; N.log.push({who:"lm",text:"Era krav ligger långt över vad tekniken är värd för oss. Vi drar tillbaka vårt bud."}); return; }
     N.log.push({who:"lm",text:"Det är långt över vad tekniken är värd för oss. Fortsätter ni på den nivån drar vi oss ur. Vårt bud på "+fmt(N.L,0)+" Mkr står kvar."+(last?" Det är vårt sista bud.":"")}); return; }
-  var nl=Math.round(N.L+0.5*(Math.min(a,R)-N.L)); if(nl>=a){ N.done=true; N.deal=true; N.price=a; N.log.push({who:"lm",text:"Vi accepterar "+fmt(a,0)+" Mkr."}); return; }
-  N.L=nl; N.log.push({who:"lm",text:"Så högt kan vi inte gå. Vi höjer vårt bud till "+fmt(nl,0)+" Mkr."+(last?" Det är vårt sista bud.":"")}); }
+  var nl=Math.round(N.L+(PAR.conc?PAR.conc[Math.min(2,N.n-1)]:0.5)*(Math.min(a,R)-N.L)); if(nl>=a){ N.done=true; N.deal=true; N.price=a; N.log.push({who:"lm",text:"Vi accepterar "+fmt(a,0)+" Mkr."}); return; }
+  var rv=PAR.rival&&PAR.rival.round===N.n&&!N.rivalDone;
+  N.L=nl; N.log.push({who:"lm",text:(nl-N.L0>0&&N.n>1?"Vi sträcker oss lite till":"Så högt kan vi inte gå")+". Vi höjer vårt bud till "+fmt(nl,0)+" Mkr."+(last&&!rv?" Det är vårt sista bud.":"")});
+  if(rv){ N.rivalDone=true; var y=rivalBid(N.L,R), n2=Math.min(R,y+5);
+    N.log.push({who:"rv",text:"Vi har hört att LH-201 är till salu och bjuder "+fmt(y,0)+" Mkr. Budet förutsätter att vi först får granska forskningen i sex månader, så det går inte att acceptera i dag."});
+    if(n2>N.L){ N.L=n2; N.log.push({who:"lm",text:"Vi känner till Norviks intresse och vill göra upp nu. Vi höjer till "+fmt(n2,0)+" Mkr."+(last?" Det är vårt sista bud.":"")}); } } }
 function renderNeg(idx,s){ var N=st.neg, inner=h("div",{style:"display:grid;gap:16px"}), f=s.fields[0];
   if(!N||!N.started){
     var form=h("form",{cls:"q",novalidate:"novalidate"}); form.appendChild(fieldEl(s,f));
@@ -757,7 +800,9 @@ function renderNeg(idx,s){ var N=st.neg, inner=h("div",{style:"display:grid;gap:
   } else {
     inner.appendChild(h("div",{cls:"negtop"},[h("div",null,[h("div",{cls:"k",text:N.done?(N.deal?"Affären är klar":(N.withdrawn?"Budet är tillbakadraget":"Ni tackade nej till")):"Vantrells bud just nu"}),h("div",{cls:"v num",text:N.done&&N.deal?fmt(N.price,0)+" Mkr":(N.withdrawn?"–":fmt(N.L,0)+" Mkr")})]),
       h("div",null,[h("div",{cls:"k",text:"Motbud kvar"}),h("div",{cls:"v num",text:String(Math.max(0,3-N.n))}),h("div",{cls:"pips","aria-hidden":"true"},[0,1,2].map(function(i){return h("i",{cls:i<N.n?"used":""});}))]),h("div",null,[h("div",{cls:"k",text:"Ert lägsta acceptabla bud"}),h("div",{cls:"v num",text:numText(A("e4.bud"),"Mkr")})])]));
-    var log=h("ol",{cls:"neglog"}); N.log.forEach(function(e,i){ var me=e.who==="vi"; log.appendChild(h("li",{cls:e.who+(i===N.freshAt&&!me?" fresh":"")},[me?null:avatar("Vantrell","#7a2e8c"),h("b",{text:me?"Ni":"Vantrell Pharma"}),h("div",{cls:"txt"},[h("span",{text:e.text})])])); }); delete N.freshAt; inner.appendChild(log);
+    var log=h("ol",{cls:"neglog"}); var fk=0; N.log.forEach(function(e,i){ var me=e.who==="vi", rvl=e.who==="rv", fr=N.freshFrom!=null&&i>N.freshFrom&&!me;
+      var li=h("li",{cls:e.who+(fr?" fresh":"")},[me?null:(rvl?avatar("Norvik","#9a5b12"):avatar("Vantrell","#7a2e8c")),h("b",{text:me?"Ni":(rvl?"Norvik Biologics":"Vantrell Pharma")}),h("div",{cls:"txt"},[h("span",{text:e.text})])]);
+      if(fr){ li.style.setProperty("--d",(fk*1.5)+"s"); fk++; } log.appendChild(li); }); delete N.freshFrom; inner.appendChild(log);
     if(!N.done){
       var inp=h("input",{id:"negbid",type:"text",inputmode:"decimal",autocomplete:"off","aria-label":"Motbud i Mkr"}), m2=h("span",{cls:"msg",role:"status"}), warned=false;
       var bCounter=h("button",{cls:"btn",type:"button",text:"Lägg motbud"}), bAcc=h("button",{cls:"btn",type:"button",text:"Acceptera "+fmt(N.L,0)+" Mkr"}), bOut=h("button",{cls:"btn",type:"button",text:"Avbryt och investera"}), arm=null;
@@ -767,18 +812,18 @@ function renderNeg(idx,s){ var N=st.neg, inner=h("div",{style:"display:grid;gap:
       inp.addEventListener("input",function(){ warned=false; m2.textContent=""; });
       bCounter.addEventListener("click",function(){ var a=parseNum(inp.value); if(isNaN(a)||a<=0||a>3000){ m2.textContent="Skriv ett motbud i Mkr."; return; }
         if(a<=N.L&&!warned){ warned=true; m2.textContent="Motbudet är inte högre än Vantrells bud. De accepterar direkt. Klicka igen för att ändå lägga det."; return; }
-        negCounter(a); st.neg.freshAt=st.neg.log.length-1; save(); renderAll(); });
+        var f0=st.neg.log.length; negCounter(a); st.neg.freshFrom=f0; save(); renderAll(); });
       if(N.n>=3) inner.appendChild(h("p",{cls:"rules",text:"Motbuden är slut. Acceptera Vantrells sista bud eller avbryt och investera."}));
       else inner.appendChild(h("div",{cls:"negact"},[h("div",{cls:"numrow"},[inp,h("span",{text:"Mkr"}),bCounter]),m2]));
       inner.appendChild(h("div",{cls:"go"},[bAcc,bOut]));
     } else { var nx=h("button",{cls:"btn primary",type:"button",text:"Gå vidare"}); nx.addEventListener("click",function(){ st.step++; save(); renderAll(); window.scrollTo(0,0); });
       inner.appendChild(h("p",{cls:"rules",text:negSummary()})); inner.appendChild(h("div",{cls:"go"},[nx])); }
   }
-  stageShell(idx,s,inner,"Regler: ni har högst tre motbud. Vantrell har en smärtgräns som ni inte känner till. Kräver ni orimligt mycket två gånger drar de tillbaka budet, och då återstår bara att investera. Ni kan när som helst acceptera budet som ligger eller avbryta."); }
+  stageShell(idx,s,inner,"Regler: ni har högst tre motbud. Vantrell har en smärtgräns som ni inte känner till, och hur mycket de ger efter varierar. Kräver ni orimligt mycket två gånger drar de tillbaka budet, och då återstår bara att investera. Ni kan när som helst acceptera budet som ligger eller avbryta."); }
 
 /* ---------------------------------------------------------------- utfallet */
 function outcome(){ var sb=solBase(true), d=A("e3.d3"), base=SEM.after(sb,PAR,d), al=SEM.alts(d), N=st.neg, abs=withO(base,{bid:0,cls:withO(SOLCLS,{upps:"nej"})});
-  var plan=realized(abs,[]), real=realized(abs,SEM.world), Dref=N.deal?N.price:(N.withdrawn?null:N.L), sell=Dref==null?null:(Dref-7)*(1-T);
+  var plan=realized(abs,[]), real=realized(abs,worldOf(SEM)), Dref=N.deal?N.price:(N.withdrawn?null:N.L), sell=Dref==null?null:(Dref-7)*(1-T);
   var chosen=N.deal?"sell":(al.length===1?al[0]:A("e5.alt")), show=chosen==="sell"?bestOf(base,al):chosen;
   return {al:al,plan:plan,real:real,Dref:Dref,sell:sell,chosen:chosen,show:show,n:plan[show].cum.length-1}; }
 function renderOutcomeChart(host,O,k){ var W=Math.max(300,host.clientWidth), H=W<520?260:310, m={l:58,r:18,t:16,b:40}, P=O.plan[O.show].cum, R=O.real[O.show].cum, n=O.n, i;
@@ -800,13 +845,13 @@ function renderOutcomeChart(host,O,k){ var W=Math.max(300,host.clientWidth), H=W
     tip.textContent=""; tip.appendChild(h("div",{cls:"t",text:"År "+j})); tip.appendChild(h("div",null,["Kalkyl ",h("b",{text:sgn(P[j],0)})," Mkr"])); if(j<=k) tip.appendChild(h("div",null,["Utfall ",h("b",{text:sgn(R[j],0)})," Mkr"]));
     tip.hidden=false; var w=tip.offsetWidth, left=X(j)*host.clientWidth/W+14; if(left+w>host.clientWidth) left=X(j)*host.clientWidth/W-w-14; tip.style.left=Math.max(0,left)+"px"; tip.style.top=Math.max(0,Y(Math.max(P[j],R[Math.min(j,k)]))*host.clientWidth/W-tip.offsetHeight-10)+"px"; });
   hit.addEventListener("pointerleave",function(){ cross.setAttribute("visibility","hidden"); tip.hidden=true; }); }
-function cardText(){ var L=["Lindhaven investeringssimulator: svarskort","Seminarium "+SEM.id+" ("+SEM.name+"), grupp "+st.grp+(st.members?": "+st.members:""),""];
+function cardText(){ var L=["Lindhaven investeringssimulator: svarskort","Seminarium "+SEM.id+" ("+SEM.name+"), grupp "+st.grp+(runTxt()?", "+runTxt():"")+(st.members?": "+st.members:""),""];
   STAGES.forEach(function(s,i){ L.push("ETAPP "+(i+1)+": "+s.subj); s.fields.forEach(function(f){ if(f.t==="cls") CLSITEMS.forEach(function(it){ L.push("- "+it[1]+": "+optLabel(CLS,A(s.id+"."+f.id+"."+it[0]))); }); else L.push("- "+f.label+" "+ansText(s,f)); }); if(s.custom==="neg") L.push("- Förhandlingens resultat: "+negSummary()); L.push(""); });
   return L.join("\n"); }
 /* gruppens egen värdering (lägsta acceptabla bud i etapp 4) mot lösningsförslaget, räknat med gruppens tolkning av skatten */
 function valCard(O){ var own=parseNum(A("e4.bud")), d=A("e3.d3"), N=st.neg; if(isNaN(own)||!d||!N) return null;
   var ts=A("e1.skatt")!=="nej", f=ts?(1-T):1, base=withO(solBase(ts),{costMode:(SEM.id===3&&A("e2.cm"))?A("e2.cm"):"ml"}), V=lowBidD(SEM,PAR,base,d); if(V==null) return null;
-  var abs2=withO(SEM.after(solBase(ts),PAR,d),{bid:0,cls:withO(SOLCLS,{upps:"nej"})}), Z=realized(abs2,SEM.world)[O.show].npv/f+7, L=N.withdrawn?null:(N.deal?N.price:N.L), diff=own-V, close=Math.abs(diff)<=Math.max(3,0.02*Math.abs(V));
+  var abs2=withO(SEM.after(solBase(ts),PAR,d),{bid:0,cls:withO(SOLCLS,{upps:"nej"})}), Z=realized(abs2,worldOf(SEM))[O.show].npv/f+7, L=N.withdrawn?null:(N.deal?N.price:N.L), diff=own-V, close=Math.abs(diff)<=Math.max(3,0.02*Math.abs(V));
   var mx=Math.max(own,V,Z,L||0,1), tb=h("tbody");
   function row(lab,val,col,strong){ var bar=h("i"); bar.style.width=Math.max(1,Math.min(100,Math.max(0,val)/mx*100))+"%"; bar.style.background=col; tb.appendChild(h("tr",strong?{cls:"strong"}:null,[h("td",{text:lab}),h("td",{cls:"n",text:fmt(val,0)+" Mkr"}),h("td",{cls:"barcell"},[bar])])); }
   row("Er egen värdering: det lägsta bud ni kunde acceptera",own,"var(--capsule)",true);
@@ -823,13 +868,28 @@ function valCard(O){ var own=parseNum(A("e4.bud")), d=A("e3.d3"), N=st.neg; if(i
   return h("div",{cls:"card",style:"display:grid;gap:12px;margin-top:16px"},[h("h2",{text:"Hur bra var er egen kalkyl?"}),
     h("p",{cls:"pdesc",text:"Det lägsta bud ni kunde acceptera är er egen värdering av projektet. Här jämförs den med lösningsförslaget, med budet och med hur det faktiskt gick. Allt är uttryckt som det bud som ger samma värde."}),
     h("div",{cls:"tablewrap"},[h("table",{cls:"val"},[tb])]),h("p",{cls:"note",text:t1+" "+t2})]); }
+var PRES=null;
+function presCard(O){ var N=st.neg||{}, d=A("e3.d3"), ul=h("ol",{cls:"pres"});
+  function li(head,body){ ul.appendChild(h("li",null,[h("b",{text:head}),h("span",{text:body})])); }
+  var news=[]; SEM.news(PAR).forEach(function(g){ if(g.s===2) g.items.forEach(function(it){ news.push(it[0].toLowerCase()+" "+it[1]+(it[2]?" i stället för "+it[2]:"")); }); });
+  li("Vad hände?",STAGES[1].subj+": "+news.join(", ")+". Därefter: "+STAGES[2].subj.toLowerCase()+".");
+  li("Vad beslutade ni?",(d?SEM.dText(PAR,d)+". ":"")+negSummary()+" "+(O.chosen==="sell"?"Ni sålde LH-201.":"Ni genomförde alternativ "+O.chosen+"."));
+  li("Vilken siffra avgjorde?","Ni värderade projektet till "+numText(A("e4.bud"),"Mkr")+", räknat som det lägsta bud ni kunde acceptera."+(N.withdrawn?"":" Vantrells sista bud var "+fmt(N.deal?N.price:N.L,0)+" Mkr."));
+  li("Varför?",A("e5.pm")||"");
+  li("Avsluta med","Vad hade fått er att välja annorlunda? Och hur gick det jämfört med kalkylen?");
+  var clock=h("span",{cls:"presclock",role:"timer",text:"5:00"}), b=h("button",{cls:"btn",type:"button",text:"Starta 5 minuter"});
+  function show(){ if(!PRES){ clock.textContent="5:00"; clock.className="presclock"; return; } var l=Math.round((PRES.end-Date.now())/1000), a=Math.abs(l); clock.textContent=(l<0?"+":"")+Math.floor(a/60)+":"+(a%60<10?"0":"")+(a%60); clock.className="presclock"+(l<0?" over":(l<60?" low":"")); }
+  b.addEventListener("click",function(){ if(PRES){ clearInterval(PRES.iv); PRES=null; b.textContent="Starta 5 minuter"; show(); return; } PRES={end:Date.now()+300000,iv:setInterval(function(){ var c=document.querySelector(".presclock"); if(!c){ clearInterval(PRES.iv); PRES=null; return; } clock=c; show(); },500)}; b.textContent="Nollställ"; show(); });
+  if(PRES){ b.textContent="Nollställ"; show(); }
+  return h("div",{cls:"card",style:"display:grid;gap:12px;margin-top:16px"},[h("div",{cls:"qhead"},[h("h2",{text:"Er presentation"}),h("div",{cls:"presrow"},[clock,b])]),
+    h("p",{cls:"pdesc",text:"Ni har högst fem minuter. Läraren väljer vem som presenterar och ställer sedan en följdfråga till någon annan i gruppen, så alla behöver kunna förklara siffrorna."}),ul]); }
 var PLAY=null; function stopPlay(){ if(PLAY){ clearInterval(PLAY); PLAY=null; } }
 function outHead(O,k){ var R=O.real[O.show].cum[k], P=O.plan[O.show].cum[k];
   function cell(lab,val,cls){ return h("div",null,[h("div",{cls:"k",text:lab}),h("div",{cls:"v"+(cls?" "+cls:""),text:val})]); }
   return h("div",{cls:"outhead"},[cell("År",k+" av "+O.n),cell("Ackumulerat nuvärde, utfall",sgn(R,0)+" Mkr",R>=0?"pos":"neg"),cell("Kalkyl enligt lösningsförslaget",sgn(P,0)+" Mkr"),cell("Skillnad",sgn(R-P,0)+" Mkr",R-P>=0?"pos":"neg")]); }
 function renderDone(){ var app=$("app"); app.textContent=""; var O=outcome(), k=clamp(st.outK||0,0,O.n), done=k>=O.n;
   var chart=h("div",{cls:"chart",id:"outChart"}), ev=h("ol",{cls:"events"});
-  SEM.world.slice().reverse().forEach(function(e){ if(e.y<=k) ev.appendChild(h("li",{cls:e.y===k?"fresh":null},[h("b",{text:"År "+e.y}),h("span",{text:e.text})])); }); if(!ev.children.length) ev.appendChild(h("li",null,[h("b",{text:"År "+k}),h("span",{text:k===0?"Investeringarna är gjorda. Stega fram för att se vad som händer.":"Inga nya händelser ännu."})]));
+  worldOf(SEM).slice().reverse().forEach(function(e){ if(e.y<=k) ev.appendChild(h("li",{cls:e.y===k?"fresh":null},[h("b",{text:"År "+e.y}),h("span",{text:e.text})])); }); if(!ev.children.length) ev.appendChild(h("li",null,[h("b",{text:"År "+k}),h("span",{text:k===0?"Investeringarna är gjorda. Stega fram för att se vad som händer.":"Inga nya händelser ännu."})]));
   var bPlay=h("button",{cls:"btn primary",type:"button",text:PLAY?"Pausa":"Spela upp år för år"}), bNext=h("button",{cls:"btn",type:"button",text:"Ett år framåt"}), bAll=h("button",{cls:"btn",type:"button",text:"Hoppa till slutet"});
   bNext.addEventListener("click",function(){ stopPlay(); st.outK=k+1; save(); renderDone(); }); bAll.addEventListener("click",function(){ stopPlay(); st.outK=O.n; save(); renderDone(); });
   bPlay.addEventListener("click",function(){ if(PLAY){ stopPlay(); renderDone(); return; } PLAY=setInterval(function(){ var O2=outcome(); if((st.outK||0)>=O2.n){ stopPlay(); renderDone(); return; } st.outK=(st.outK||0)+1; save(); renderDone(); },900); renderDone(); });
@@ -838,21 +898,61 @@ function renderDone(){ var app=$("app"); app.textContent=""; var O=outcome(), k=
   var card=h("div",{cls:"card",style:"display:grid;gap:14px"},[h("div",{cls:"qhead"},[h("h2",{text:"Så gick det"}),h("span",{cls:"time",text:"År "+k+" av "+O.n})]),h("p",{cls:"pdesc",text:what+" Alla grupper i seminariet möter samma framtid."}),outHead(O,k),done?null:h("div",{cls:"go",style:"border-top:0;padding-top:0"},[bPlay,bNext,bAll]),leg,chart,ev]);
   if(done){ var tb=h("tbody"), vals=[]; if(O.sell!=null) vals.push({k:"sell",name:"Sälja till Vantrell för "+fmt(O.Dref,0)+" Mkr",low:"en försäljning till Vantrell",p:O.sell,r:O.sell}); O.al.forEach(function(a){ vals.push({k:a,name:"Investera enligt a"+ALTNAME[a].slice(1),low:"alternativ "+a,p:O.plan[a].npv,r:O.real[a].npv}); });
     var bestP=vals.slice().sort(function(a,b){return b.p-a.p;})[0], bestR=vals.slice().sort(function(a,b){return b.r-a.r;})[0], mine=vals.filter(function(v){return v.k===O.chosen;})[0];
-    vals.forEach(function(v){ tb.appendChild(h("tr",v.k===O.chosen?{cls:"strong"}:null,[h("td",{text:v.name+(v.k===O.chosen?" (ert val)":"")}),h("td",{cls:"n",text:sgn(v.p,0)}),h("td",{cls:"n",text:sgn(v.r,0)}),h("td",{text:(v===bestP?"Bäst enligt lösningsförslagets kalkyl":"")+(v===bestP&&v===bestR?", ":"")+(v===bestR?"Bäst i efterhand":"")})])); });
+    vals.forEach(function(v){ tb.appendChild(h("tr",v.k===O.chosen?{cls:"strong"}:null,[h("td",null,[v.name+(v.k===O.chosen?" (ert val)":""),(v===bestP||v===bestR)?h("span",{cls:"why",text:(v===bestP?"Bäst enligt lösningsförslagets kalkyl":"")+(v===bestP&&v===bestR?" och bäst i efterhand":"")+(v!==bestP&&v===bestR?"Bäst i efterhand":"")}):null]),h("td",{cls:"n",text:sgn(v.p,0)}),h("td",{cls:"n",text:sgn(v.r,0)})])); });
     var verdict=mine?("Ert val gav "+fmt(mine.r,0)+" Mkr i nuvärde. "+(mine===bestR?"Det blev också det bästa valet i efterhand.":"I efterhand hade "+bestR.low+" gett "+fmt(bestR.r-mine.r,0)+" Mkr mer.")+" "+(mine===bestP?"Enligt lösningsförslagets kalkyl var det rätt val när beslutet fattades.":"Enligt lösningsförslagets kalkyl var "+bestP.low+" "+fmt(bestP.p-mine.p,0)+" Mkr bättre när beslutet fattades.")):"";
-    card.appendChild(h("div",{cls:"tablewrap"},[h("table",null,[h("thead",null,[h("tr",null,[h("th",{text:"Nuvärde i Mkr"}),h("th",{text:"Kalkyl enligt lösningsförslaget"}),h("th",{text:"Utfall"}),h("th",{text:""})])]),tb])]));
+    card.appendChild(h("div",{cls:"tablewrap"},[h("table",null,[h("thead",null,[h("tr",null,[h("th",{text:"Nuvärde i Mkr"}),h("th",{text:"Kalkyl enligt lösningsförslaget"}),h("th",{text:"Utfall"})])]),tb])]));
     card.appendChild(h("p",{cls:"note",text:verdict}));
     var vc=valCard(O);
     card.appendChild(h("p",{cls:"pdesc",text:"Ett bra beslut kan få ett dåligt utfall, och tvärtom. Bedöm beslutet efter vad ni visste när ni fattade det. Diagrammet och tabellen bygger inte på era inskrivna siffror, utan på lösningsförslagets kalkyl (med skatt på engångsposter) och på era bindande beslut."})); }
   app.appendChild(card);
   if(done&&vc) app.appendChild(vc);
+  if(done) app.appendChild(presCard(O));
   if(done){ var tb2=h("tbody"); STAGES.forEach(function(s,i){ tb2.appendChild(h("tr",{cls:"sh"},[h("td",{colspan:"2",text:"Etapp "+(i+1)+": "+s.subj})])); answerRows(s,tb2); });
     var out=h("textarea",{rows:8,readonly:"readonly","aria-label":"Svarskortet som text"}); out.hidden=true; var cmsg=h("span",{cls:"help",role:"status"}), copy=h("button",{cls:"btn",type:"button",text:"Kopiera svarskortet som text"});
     copy.addEventListener("click",function(){ var t=cardText(); function fallback(){ out.hidden=false; out.value=t; out.focus(); out.select(); cmsg.textContent="Markera texten och kopiera den."; } try{ navigator.clipboard.writeText(t).then(function(){cmsg.textContent="Kopierat.";},fallback); }catch(e){ fallback(); } });
-    app.appendChild(h("div",{cls:"card",style:"display:grid;gap:14px;margin-top:16px"},[h("div",{cls:"qhead"},[h("h2",{text:"Svarskort för grupp "+st.grp}),h("span",{cls:"time",text:"Seminarium "+SEM.id+(st.members?", "+st.members:"")})]),
+    app.appendChild(h("div",{cls:"card",style:"display:grid;gap:14px;margin-top:16px"},[h("div",{cls:"qhead"},[h("h2",{text:"Svarskort för grupp "+st.grp}),h("span",{cls:"time"+(runTxt()?" warnrun":""),text:"Seminarium "+SEM.id+(runTxt()?", "+runTxt():"")+(st.members?", "+st.members:"")})]),
       h("p",{cls:"rules",text:"Svaren är låsta. Vänta på den gemensamma genomgången, där ni jämför era svar med en möjlig lösning och diskuterar antagandena bakom den."}),h("div",{cls:"go",style:"border-top:0;padding-top:0"},[copy,cmsg]),out,h("div",{cls:"tablewrap"},[h("table",{cls:"ans"},[h("thead",null,[h("tr",null,[h("th",{text:"Fråga"}),h("th",{text:"Ert låsta svar"})])]),tb2])])])); }
   renderOutcomeChart(chart,O,k); }
-function renderAll(){ if(st.step<=STAGES.length) stopPlay(); setup(); renderSteps(); if(st.step===0||!SEM) renderStart(); else if(st.step<=STAGES.length) renderStage(); else renderDone(); if(st.unlocked&&SEM) renderDisc(); else { $("disc").hidden=true; $("gate").hidden=false; } }
+/* ---------------------------------------------------------------- rapportering till lärarvyn
+   Skickar gruppnummer, etapp, beslut och hur svaren förhåller sig till lösningsförslaget. Inga namn skickas. Är nyckeln tom är funktionen avstängd. */
+var SB={url:"https://ywjuijnurbxuwcexrggz.supabase.co",key:""}; window.__sim.SB=SB;
+function rpc(fn,body){ return fetch(SB.url+"/rest/v1/rpc/"+fn,{method:"POST",keepalive:true,headers:{"Content-Type":"application/json",apikey:SB.key,Authorization:"Bearer "+SB.key},body:JSON.stringify(body)}).then(function(r){ if(!r.ok) throw new Error("http "+r.status); return r.status===204?null:r.json().catch(function(){return null;}); }); }
+function judgeAll(){ var sb=solBase(true), gb=grpBase(), same=0, own=0, dev=[];
+  STAGES.forEach(function(s,si){ if(si+1>=st.step&&!(si+1===4&&st.neg&&st.neg.started)) return; s.fields.forEach(function(f){ if(f.t!=="num") return; var a=parseNum(A(s.id+"."+f.id)); if(isNaN(a)) return;
+      var sol=f.calc?f.calc(sb):(f.sol!=null?f.sol:null), imp=(f.calc&&gb)?f.calc(gb):null; if(sol==null) return;
+      if(Math.abs(a-sol)<=f.tol) same++; else if(imp!=null&&Math.abs(a-imp)<=f.tol) own++; else dev.push("E"+(si+1)+": "+f.label.slice(0,70)+" (svar "+fmt(a,f.d)+", lösning "+fmt(sol,f.d)+")"); }); });
+  return {same:same,own:own,dev:dev.slice(0,12)}; }
+var lastRK=null;
+$("foot").textContent="Undervisningscaset Lindhaven Pharma AB är påhittat, liksom bolagen Vantrell Pharma och Norvik Biologics och alla siffror och bud. "+(SB.key?"Under seminariet skickas gruppens nummer, beslut och svar till läraren. Inga namn skickas.":"Svaren sparas bara i den här webbläsaren och skickas inte till läraren.")+" Kopiera svarskortet i slutet om ni ska lämna in det.";
+function report(){ if(!SB.key||!SEM||!st.code||st.step<1) return; var N=st.neg, rk=st.step+"|"+(N?N.started+"/"+N.n+"/"+N.done:""); if(rk===lastRK) return; lastRK=rk;
+  try{ var j=judgeAll(), d=A("e3.d3"), ts=A("e1.skatt")!=="nej", V=null; if(d) V=lowBidD(SEM,PAR,withO(solBase(ts),{costMode:(SEM.id===3&&A("e2.cm"))?A("e2.cm"):"ml"}),d);
+    var bud=parseNum(A("e4.bud")), al=d?SEM.alts(d):null;
+    var data={rec:A("e2.rec")||null,d3:st.step>3?d||null:null,bud:isNaN(bud)?null:bud,V:(V==null||st.step<4||(st.step===4&&!(N&&N.started)))?null:Math.round(V),neg:N&&N.started?{done:N.done,deal:N.deal,price:N.price,L:N.L,n:N.n,wd:N.withdrawn}:null,
+      alt:st.step>5?(N&&N.deal?"sell":(al&&al.length===1?al[0]:A("e5.alt")||null)):null,same:j.same,own:j.own,dev:j.dev,skatt:A("e1.skatt")||null};
+    rpc("sim_report",{p_code:st.code,p_grp:st.grp,p_client:clientId(),p_run:st.run||1,p_step:Math.min(6,st.step),p_data:data}).catch(function(){ lastRK=null; }); }catch(e){} }
+var LIVE={rows:null,err:null,t:0,iv:null};
+function tcode(){ try{ return sessionStorage.getItem("lindhaven-tcode")||""; }catch(e){ return ""; } }
+function liveFetch(){ if(!SB.key||!tcode()) { liveRender(); return; } rpc("sim_teacher_view",{p_code:tcode(),p_hours:12}).then(function(rows){ LIVE.rows=rows||[]; LIVE.err=null; LIVE.t=Date.now(); liveRender(); }).catch(function(){ LIVE.err="Det gick inte att nå databasen."; liveRender(); }); }
+function liveRender(){ var host=$("liveBody"); if(!host) return; host.textContent="";
+  if(!SB.key){ host.appendChild(h("p",{cls:"pdesc",text:"Lärarvyn är inte påslagen i den här versionen av sidan."})); return; }
+  if(!tcode()){ var inp=h("input",{type:"text",cls:"sel",autocomplete:"off","aria-label":"Lärarkod"}), b=h("button",{cls:"btn",type:"button",text:"Visa grupperna"}); b.addEventListener("click",function(){ try{ sessionStorage.setItem("lindhaven-tcode",inp.value.trim().toLowerCase()); }catch(e){} liveFetch(); });
+    host.appendChild(h("div",{cls:"teachpick"},[h("span",{text:"Ange lärarkoden igen för att hämta gruppernas läge:"}),inp,b])); return; }
+  if(LIVE.err){ host.appendChild(h("p",{cls:"pdesc",text:LIVE.err+" Försöker igen om en stund."})); }
+  if(!LIVE.rows){ if(!LIVE.err) host.appendChild(h("p",{cls:"pdesc",text:"Hämtar …"})); return; }
+  var latest={}; LIVE.rows.forEach(function(r){ var k=r.grp+"|"+r.client; if(!latest[k]||r.run>latest[k].run) latest[k]=r; });
+  var rows=Object.keys(latest).map(function(k){return latest[k];}).sort(function(a,b){return a.grp-b.grp||a.run-b.run;});
+  if(!rows.length){ host.appendChild(h("p",{cls:"pdesc",text:"Ingen grupp har startat ännu. Listan uppdateras var femtonde sekund."})); return; }
+  var names=STAGES.map(function(s){return s.short;}).concat(["Utfallet"]), tb=h("tbody");
+  rows.forEach(function(r){ var d=r.data||{}, n=d.neg, mins=Math.max(0,Math.round((Date.now()-new Date(r.updated_at).getTime())/60000));
+    var negT=!n?"–":(n.done?(n.deal?"Sålt för "+fmt(n.price,0):(n.wd?"Budet drogs tillbaka":"Nej till "+fmt(n.L,0))):"Pågår, bud "+fmt(n.L,0)), val=(d.bud!=null&&d.V!=null)?fmt(d.bud,0)+" mot "+fmt(d.V,0):"–", big=(d.bud!=null&&d.V!=null)&&Math.abs(d.bud-d.V)>Math.max(3,0.02*Math.abs(d.V));
+    var devCell=h("td",null,[(d.dev&&d.dev.length)?h("details",null,[h("summary",{text:d.dev.length+" avviker"}),h("ul",{cls:"devlist"},d.dev.map(function(x){return h("li",{text:x});}))]):((d.same||d.own)?"Inga":"–")]);
+    var pick=h("button",{cls:"btn quiet",type:"button",text:"Grupp "+r.grp}); pick.addEventListener("click",function(){ if(st.step===0){ st.grp=r.grp; save(); renderAll(); } });
+    tb.appendChild(h("tr",null,[h("td",null,[st.step===0?pick:"Grupp "+r.grp,r.run>1?h("span",{cls:"tag diff",text:"försök "+r.run}):null]),h("td",{text:r.step+". "+(names[r.step-1]||"")}),h("td",{text:d.rec?(d.rec==="lock"?"Sälj":"Alt. "+d.rec):"–"}),h("td",{text:d.d3?(d.d3==="ja"?"Ja":"Nej"):"–"}),h("td",{text:negT}),h("td",{text:d.alt?(d.alt==="sell"?"Sålde":"Alt. "+d.alt):"–"}),h("td",null,[val,big?h("span",{cls:"tag diff",text:"avviker"}):null]),devCell,h("td",{text:mins<1?"nyss":mins+" min sedan"})])); });
+  host.appendChild(h("div",{cls:"tablewrap tall"},[h("table",{cls:"live"},[h("thead",null,[h("tr",null,["Grupp","Etapp","Rekommendation",SEM.dName,"Förhandling","Slutval","Egen värdering mot lösning (Mkr)","Räknesvar","Uppdaterad"].map(function(x){return h("th",{text:x});}))]),tb])]));
+  host.appendChild(h("p",{cls:"help",text:rows.length+" grupper. Uppdateras var femtonde sekund."+(st.step===0?" Klicka på en grupp för att visa dess lösningsförslag.":"")})); }
+function livePanel(){ if(!LIVE.iv){ LIVE.iv=setInterval(function(){ if($("liveBody")) liveFetch(); },15000); } setTimeout(liveFetch,0);
+  return h("section",{cls:"panel"},[h("h2",{text:"Grupperna just nu"}),h("p",{cls:"pdesc",text:"Här ser du var varje grupp befinner sig, vad de har beslutat och vilka räknesvar som avviker från lösningsförslaget. Använd det för att välja presentatör och följdfråga. Inga namn sparas, bara gruppnummer."}),h("div",{id:"liveBody"})]); }
+function renderAll(){ if(st.step<=STAGES.length) stopPlay(); setup(); report(); renderSteps(); if(st.step===0||!SEM) renderStart(); else if(st.step<=STAGES.length) renderStage(); else renderDone(); if(st.unlocked&&SEM) renderDisc(); else { $("disc").hidden=true; $("gate").hidden=false; } }
 (function(){ var b=$("restart"), armed=false, t=0; b.addEventListener("click",function(){ if(!armed){ armed=true; b.textContent="Bekräfta: alla svar raderas"; t=setTimeout(function(){armed=false; b.textContent="Börja om";},5000); return; }
   clearTimeout(t); armed=false; b.textContent="Börja om"; st=fresh(); save(); renderAll(); window.scrollTo(0,0); }); })();
 window.addEventListener("resize",function(){ if(SEM&&st.step>STAGES.length&&$("outChart")){ var O=outcome(); renderOutcomeChart($("outChart"),O,clamp(st.outK||0,0,O.n)); } });
@@ -861,6 +961,7 @@ window.addEventListener("resize",function(){ if(SEM&&st.step>STAGES.length&&$("o
 var solTax=true, explorerReady=false;
 function tryCode(){ var k=GENOMH.indexOf(hash($("code").value.trim().toLowerCase())), msg=$("codeMsg");
   if(k<0){ msg.textContent="Koden stämmer inte."; return; }
+  try{ sessionStorage.setItem("lindhaven-tcode",$("code").value.trim().toLowerCase()); }catch(e){}
   if(st.sem==null||st.step===0){ st.sem=k; st.step=0; } else if(st.sem!==k){ msg.textContent="Koden gäller ett annat seminarium."; return; }
   st.unlocked=true; save(); msg.textContent=""; renderAll(); $("disc").scrollIntoView(); }
 $("codeBtn").addEventListener("click",tryCode); $("code").addEventListener("keydown",function(e){ if(e.key==="Enter") tryCode(); });
@@ -888,10 +989,11 @@ function renderDisc(){
       if(f.t==="multi"){ tb.appendChild(h("tr",null,[lab(f.label,f.why),h("td",{text:(A(key)||[]).map(function(x){return optLabel(f.opts,x);}).join(" och ")||"–"}),h("td",{text:"–"}),h("td",{text:f.solText||"–"}),h("td")])); return; }
       tb.appendChild(h("tr",null,[lab(f.label),h("td",{colspan:"4",text:A(key)||"–"})])); });
     if(s.custom==="neg"){ var V=d3?lowBidD(SEM,PAR,sb,d3):null, rc=reach(PAR), act=(N&&N.done)?(N.deal?"sell":"inv"):null, solAct=V==null?null:(rc>=V?"sell":"inv");
-      var solTxt="Vantrells smärtgräns var "+fmt(PAR.R,0)+" Mkr. Med tre höga motbud gick budet att få upp till ungefär "+fmt(rc,0)+" Mkr."+(V==null?"":(rc>=V?" Det är över lägsta acceptabla bud ("+fmt(V,0)+" Mkr), så det var rimligt att sälja efter förhandling.":" Det är under lägsta acceptabla bud ("+fmt(V,0)+" Mkr), så det var rimligt att investera."));
+      var solTxt="Vantrells smärtgräns var "+fmt(PAR.R,0)+" Mkr. Med tre höga motbud gick budet att få upp till ungefär "+fmt(rc,0)+" Mkr."+(PAR.rival?" Norvik Biologics dök upp efter motbud "+PAR.rival.round+", vilket fick Vantrell att höja.":"")+(V==null?"":(rc>=V?" Det är över lägsta acceptabla bud ("+fmt(V,0)+" Mkr), så det var rimligt att sälja efter förhandling.":" Det är under lägsta acceptabla bud ("+fmt(V,0)+" Mkr), så det var rimligt att investera."));
       var extra=(N&&N.deal&&V!=null)?(N.price>=V?" Priset ligger "+fmt(N.price-V,0)+" Mkr över lägsta acceptabla bud.":" Priset ligger "+fmt(V-N.price,0)+" Mkr under lägsta acceptabla bud."):"";
       tb.appendChild(h("tr",null,[lab("Förhandlingens resultat","Lägsta acceptabla bud är räknat givet gruppens bindande beslut i etapp 3."),h("td",{text:(negSummary()||"–")+extra}),h("td",{text:"–"}),h("td",{text:solTxt}),h("td",null,[tag(act&&solAct?(act===solAct&&!(N.deal&&N.price<V)?"same":"diff"):null,act&&solAct?(act===solAct&&!(N.deal&&N.price<V)?"Rimligt utfall":"Avviker"):null)])])); } });
   host.appendChild(h("div",null,[h("h2",{text:"Gemensam genomgång: seminarium "+SEM.id+", "+SEM.name.toLowerCase(),style:"font-size:26px"}),h("p",{style:"color:var(--ink-2);max-width:78ch;margin-top:4px",text:(st.step===0?"Här visas lösningsförslaget för grupp "+st.grp+".":"Här jämförs svaren från grupp "+st.grp+" med en möjlig lösning.")+" Den är ett förslag, inte ett facit: flera av frågorna beror på hur caset tolkas."}),st.step===0?teachPick():null]));
+  if(st.step===0) host.appendChild(livePanel());
   host.appendChild(h("section",{cls:"panel"},[h("div",{cls:"phead"},[h("h2",{text:"Era svar och en möjlig lösning"}),seg]),
     h("p",{cls:"pdesc",text:"Kolumnen Era antaganden ger visar vad kalkylen blir med gruppens egna val i etapp 1: skatten på engångsposter, hur uppköpsbudet behandlades och kalkylräntan. Skiljer den sig från gruppens svar finns ett räknefel. Skiljer den sig från lösningen är det en fråga om tolkning. Från etapp 4 räknas allt med gruppens bindande beslut i etapp 3."}),
     h("div",{cls:"tablewrap"},[h("table",{cls:"cmp"},[h("thead",null,[h("tr",null,[h("th",{text:"Fråga"}),h("th",{text:"Ert svar"}),h("th",{text:"Era antaganden ger"}),h("th",{text:"Möjlig lösning"}),h("th",{text:""})])]),tb])])]));
