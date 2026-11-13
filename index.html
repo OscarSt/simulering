@@ -749,11 +749,11 @@ function prevStages(upto){ if(upto<1) return null; var box=h("div",{cls:"card pr
   return box; }
 
 function renderStart(){ var app=$("app"); app.textContent="";
-  var c=h("input",{id:"scode",type:"text",autocomplete:"off",spellcheck:"false"}), g=h("select",{id:"grp",cls:"sel"}), m=h("input",{id:"mem",type:"text",autocomplete:"off"}), msg=h("span",{cls:"msg",role:"status"});
-  for(var i=1;i<=NG;i++) g.appendChild(h("option",{value:String(i),text:"Grupp "+i})); g.value=String(st.grp||1); m.value=st.members||"";
+  var c=h("input",{id:"scode",type:"text",autocomplete:"off",spellcheck:"false"}), g=h("select",{id:"grp",cls:"sel"}), msg=h("span",{cls:"msg",role:"status"});
+  for(var i=1;i<=NG;i++) g.appendChild(h("option",{value:String(i),text:"Grupp "+i})); g.value=String(st.grp||1);
   var btn=h("button",{cls:"btn primary",type:"button",text:"Starta seminariet"});
   function go(){ var k=STARTH.indexOf(hash(c.value.trim().toLowerCase())); if(k<0){ msg.textContent="Seminariekoden stämmer inte. Läraren har den."; c.focus(); return; }
-    st=fresh(); st.sem=k; st.grp=parseInt(g.value,10); st.members=m.value.trim(); st.step=1; st.code=c.value.trim().toLowerCase(); st.tStart=Date.now(); st.wv=termVariant(); st.run=bumpRun(k); save(); renderAll(); window.scrollTo(0,0); }
+    st=fresh(); st.sem=k; st.grp=parseInt(g.value,10); st.step=1; st.code=c.value.trim().toLowerCase(); st.tStart=Date.now(); st.wv=termVariant(); st.run=bumpRun(k); save(); renderAll(); window.scrollTo(0,0); }
   btn.addEventListener("click",go); c.addEventListener("keydown",function(e){ if(e.key==="Enter") go(); });
   app.appendChild(h("section",{cls:"hero"},[
     h("div",null,[h("h1",{text:"Ni är Lindhavens ekonomiavdelning."}),
@@ -762,7 +762,7 @@ function renderStart(){ var app=$("app"); app.textContent="";
         h("li",{text:"Nya meddelanden kommer i fyra etapper. Varje grupp har egna siffror."}),h("li",{text:"Era beslut låses. Det ni väljer i en etapp avgör vad ni räknar på i nästa."}),
         h("li",{text:"I etapp 4 förhandlar ni med köparen. Sist spelas tio till tjugo år upp, år för år."})])]),
     h("div",{cls:"card join"},[h("h2",{text:"Starta er grupp"}),
-      h("div",{cls:"startgrid"},[h("div",{cls:"fld"},[h("label",{"for":"scode",text:"Seminariekod från läraren"}),c]),h("div",{cls:"fld"},[h("label",{"for":"grp",text:"Gruppnummer"}),h("div",null,[g])]),h("div",{cls:"fld"},[h("label",{"for":"mem",text:"Gruppmedlemmar (valfritt)"}),m]),h("div",{cls:"go",style:"border-top:0;padding-top:0"},[btn,msg])]),
+      h("div",{cls:"startgrid"},[h("div",{cls:"fld"},[h("label",{"for":"scode",text:"Seminariekod från läraren"}),c]),h("div",{cls:"fld"},[h("label",{"for":"grp",text:"Gruppnummer"}),h("div",null,[g])]),h("div",{cls:"go",style:"border-top:0;padding-top:0"},[btn,msg])]),
       h("p",{cls:"pass",text:"Ange belopp i Mkr med en decimal. Etapperna tar ungefär 45 minuter, och klockan uppe till höger visar riktmärket för varje etapp."})])])); }
 function lockButton(label,onLock){ var btn=h("button",{cls:"btn primary",type:"submit",text:label}), armed=false;
   return {btn:btn,disarm:function(){ if(armed){ armed=false; btn.className="btn primary"; btn.textContent=label; } },fire:function(){ if(!armed){ armed=true; btn.className="btn primary armed"; btn.textContent="Bekräfta: svaren kan inte ändras sedan"; return; } onLock(); }}; }
@@ -927,7 +927,7 @@ function judgeAll(){ var sb=solBase(true), gb=grpBase(), same=0, own=0, dev=[];
       if(Math.abs(a-sol)<=f.tol) same++; else if(imp!=null&&Math.abs(a-imp)<=f.tol) own++; else dev.push("E"+(si+1)+": "+f.label.slice(0,70)+" (svar "+fmt(a,f.d)+", lösning "+fmt(sol,f.d)+")"); }); });
   return {same:same,own:own,dev:dev.slice(0,12)}; }
 var lastRK=null;
-$("foot").textContent="Undervisningscaset Lindhaven Pharma AB är påhittat, liksom bolagen Vantrell Pharma och Norvik Biologics och alla siffror och bud. "+(SB.key?"Under seminariet skickas gruppens nummer, beslut och svar till läraren. Inga namn skickas.":"Svaren sparas bara i den här webbläsaren och skickas inte till läraren.")+" Kopiera svarskortet i slutet om ni ska lämna in det.";
+$("foot").textContent="Undervisningscaset Lindhaven Pharma AB är påhittat, liksom bolagen Vantrell Pharma och Norvik Biologics och alla siffror och bud. "+(SB.key?"Under seminariet skickas gruppens nummer, beslut och svar till läraren. Inga namn samlas in.":"Svaren sparas bara i den här webbläsaren och skickas inte till läraren.")+" Kopiera svarskortet i slutet om ni ska lämna in det.";
 function report(){ if(!SB.key||!SEM||!st.code||st.step<1) return; var N=st.neg, rk=st.step+"|"+(N?N.started+"/"+N.n+"/"+N.done:""); if(rk===lastRK) return; lastRK=rk;
   try{ var j=judgeAll(), d=A("e3.d3"), ts=A("e1.skatt")!=="nej", V=null; if(d) V=lowBidD(SEM,PAR,withO(solBase(ts),{costMode:(SEM.id===3&&A("e2.cm"))?A("e2.cm"):"ml"}),d);
     var bud=parseNum(A("e4.bud")), al=d?SEM.alts(d):null;
