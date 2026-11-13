@@ -915,8 +915,12 @@ function renderDone(){ var app=$("app"); app.textContent=""; var O=outcome(), k=
   renderOutcomeChart(chart,O,k); }
 /* ---------------------------------------------------------------- rapportering till lärarvyn
    Skickar gruppnummer, etapp, beslut och hur svaren förhåller sig till lösningsförslaget. Inga namn skickas. Är nyckeln tom är funktionen avstängd. */
-var SB={url:"https://ywjuijnurbxuwcexrggz.supabase.co",key:""}; window.__sim.SB=SB;
-function rpc(fn,body){ return fetch(SB.url+"/rest/v1/rpc/"+fn,{method:"POST",keepalive:true,headers:{"Content-Type":"application/json",apikey:SB.key,Authorization:"Bearer "+SB.key},body:JSON.stringify(body)}).then(function(r){ if(!r.ok) throw new Error("http "+r.status); return r.status===204?null:r.json().catch(function(){return null;}); }); }
+/* nycklarna är publika och ger bara tillgång till två funktioner som själva kräver seminariekod eller lärarkod */
+var SB={url:"https://ywjuijnurbxuwcexrggz.supabase.co",key:"sb_publishable_XFionSrYi-D7MVxemTY8qg_yFWyhV48",key2:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3anVpam51cmJ4dXdjZXhyZ2d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MTU1MTYsImV4cCI6MjExMDA5MTUxNn0.LGj96c5iZX7aZFHPA8Zc9PXbnqHWTYmpaCBw3S3kPNA"}; window.__sim.SB=SB;
+function rpc(fn,body){ function call(k){ var hd={"Content-Type":"application/json",apikey:k}; if(!/^sb_/.test(k)) hd.Authorization="Bearer "+k;
+    return fetch(SB.url+"/rest/v1/rpc/"+fn,{method:"POST",keepalive:true,headers:hd,body:JSON.stringify(body)}); }
+  return call(SB.key).then(function(r){ if((r.status===401||r.status===403)&&SB.key2&&SB.key2!==SB.key){ SB.key=SB.key2; return call(SB.key); } return r; })
+    .then(function(r){ if(!r.ok) throw new Error("http "+r.status); return r.status===204?null:r.json().catch(function(){return null;}); }); }
 function judgeAll(){ var sb=solBase(true), gb=grpBase(), same=0, own=0, dev=[];
   STAGES.forEach(function(s,si){ if(si+1>=st.step&&!(si+1===4&&st.neg&&st.neg.started)) return; s.fields.forEach(function(f){ if(f.t!=="num") return; var a=parseNum(A(s.id+"."+f.id)); if(isNaN(a)) return;
       var sol=f.calc?f.calc(sb):(f.sol!=null?f.sol:null), imp=(f.calc&&gb)?f.calc(gb):null; if(sol==null) return;
