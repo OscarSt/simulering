@@ -409,6 +409,15 @@ table.live .btn.quiet{padding:0}
 table.res td,table.res th{white-space:normal;vertical-align:top}
 table.res th:nth-child(2),table.res td:nth-child(2){text-align:left}
 table.res td.n{white-space:nowrap;text-align:right}
+#liveBody{min-width:0;display:grid;gap:10px}
+.flagsum{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+.flagsum .tag{font-size:13.5px;padding:3px 12px;font-weight:600}
+table.live tr.lv2 td:first-child{box-shadow:inset 4px 0 0 var(--bad)}
+table.live tr.lv1 td:first-child{box-shadow:inset 4px 0 0 var(--capsule)}
+.tablewrap.tall table.live td:first-child{min-width:190px;max-width:240px;white-space:normal}
+.tablewrap.tall table.live td:nth-child(2){white-space:nowrap}
+table.live td:nth-child(3){white-space:normal;min-width:90px}
+table.live td:first-child .why{display:block;font-size:12px;color:var(--muted);margin-top:3px;max-width:34ch}
 </style>
 
 
@@ -974,6 +983,22 @@ function report(){ if(!SB.key||!SEM||!st.code||st.step<1) return; var N=st.neg, 
 var LIVE={rows:null,err:null,t:0,iv:null};
 function tcode(){ try{ return sessionStorage.getItem("lindhaven-tcode")||""; }catch(e){ return ""; } }
 function liveFetch(){ if(!SB.key||!tcode()) { liveRender(); return; } rpc("sim_teacher_view",{p_code:tcode(),p_hours:12}).then(function(rows){ LIVE.rows=rows||[]; LIVE.err=null; LIVE.t=Date.now(); liveRender(); }).catch(function(){ LIVE.err="Det gick inte att nå databasen."; liveRender(); }); }
+/* automatisk bedömning av en grupp i lärarvyn: räknesvar, egen värdering och beslut jämförs med lösningsförslaget för just den gruppen */
+var FLAG={devRed:3,shareRed:0.5,valRed:0.25,valYel:0.10};
+function gradeRow(r){ var d=r.data||{}, why=[], red=false, yel=false, p=semPar(SEM,clamp(r.grp-1,0,NG-1)), sb=solBase(true);
+  var dev=(d.dev||[]).length, tot=(d.same||0)+(d.own||0)+dev;
+  if(dev){ if(dev>=FLAG.devRed||(tot&&dev/tot>=FLAG.shareRed)){ red=true; } else yel=true; why.push(dev+" av "+tot+" räknesvar avviker"); }
+  if(d.bud!=null&&d.V!=null&&d.V>0){ var e=Math.abs(d.bud-d.V)/d.V; if(e>FLAG.valRed){ red=true; why.push("egen värdering "+Math.round(e*100)+" % från lösningen"); } else if(e>FLAG.valYel){ yel=true; why.push("egen värdering "+Math.round(e*100)+" % från lösningen"); } }
+  var wrong=[];
+  if(d.rec){ var sr=G(SEM.s2(sb,p)).rec; if(d.rec!==sr) wrong.push("rekommendation i etapp 2"); }
+  if(d.d3&&d.d3!==p.dopt) wrong.push(SEM.dName.toLowerCase()+" i etapp 3");
+  if(d.alt&&d.d3){ var V=lowBidD(SEM,p,sb,d.d3), n=d.neg||{}, L=n.deal?n.price:(n.wd?null:n.L), recAct=(L!=null&&V!=null&&L>=V)?"sell":bestOf(SEM.after(sb,p,d.d3),SEM.alts(d.d3));
+    if((d.alt==="sell")!==(recAct==="sell")) wrong.push(d.alt==="sell"?"sålde fast lösningen investerar":"investerade fast lösningen säljer"); else if(d.alt!=="sell"&&d.alt!==recAct) wrong.push("valde alternativ "+d.alt+" i stället för "+recAct); }
+  if(wrong.length>=2) red=true; else if(wrong.length) yel=true;
+  if(wrong.length) why.push("annat beslut: "+wrong.join(", "));
+  if(r.run>1){ yel=true; why.push("har startat om"); }
+  var lvl=red?2:(yel?1:(tot||d.rec?0:-1));
+  return {lvl:lvl,why:why,label:["Inga svar än","OK","Kontrollera","Följ upp"][lvl+1],cls:["","same","own","diff"][lvl+1]}; }
 function liveRender(){ var host=$("liveBody"); if(!host) return; host.textContent="";
   if(!SB.key){ host.appendChild(h("p",{cls:"pdesc",text:"Lärarvyn är inte påslagen i den här versionen av sidan."})); return; }
   if(!tcode()){ var inp=h("input",{type:"text",cls:"sel",autocomplete:"off","aria-label":"Lärarkod"}), b=h("button",{cls:"btn",type:"button",text:"Visa grupperna"}); b.addEventListener("click",function(){ try{ sessionStorage.setItem("lindhaven-tcode",inp.value.trim().toLowerCase()); }catch(e){} liveFetch(); });
@@ -981,15 +1006,22 @@ function liveRender(){ var host=$("liveBody"); if(!host) return; host.textConten
   if(LIVE.err){ host.appendChild(h("p",{cls:"pdesc",text:LIVE.err+" Försöker igen om en stund."})); }
   if(!LIVE.rows){ if(!LIVE.err) host.appendChild(h("p",{cls:"pdesc",text:"Hämtar …"})); return; }
   var latest={}; LIVE.rows.forEach(function(r){ var k=r.grp+"|"+r.client; if(!latest[k]||r.run>latest[k].run) latest[k]=r; });
-  var rows=Object.keys(latest).map(function(k){return latest[k];}).sort(function(a,b){return a.grp-b.grp||a.run-b.run;});
+  var rows=Object.keys(latest).map(function(k){ var r=latest[k]; r.g=gradeRow(r); return r; }).sort(function(a,b){return b.g.lvl-a.g.lvl||a.grp-b.grp||a.run-b.run;});
   if(!rows.length){ host.appendChild(h("p",{cls:"pdesc",text:"Ingen grupp har startat ännu. Listan uppdateras var femtonde sekund."})); return; }
   var names=STAGES.map(function(s){return s.short;}).concat(["Utfallet"]), tb=h("tbody");
   rows.forEach(function(r){ var d=r.data||{}, n=d.neg, mins=Math.max(0,Math.round((Date.now()-new Date(r.updated_at).getTime())/60000));
     var negT=!n?"–":(n.done?(n.deal?"Sålt för "+fmt(n.price,0):(n.wd?"Budet drogs tillbaka":"Nej till "+fmt(n.L,0))):"Pågår, bud "+fmt(n.L,0)), val=(d.bud!=null&&d.V!=null)?fmt(d.bud,0)+" mot "+fmt(d.V,0):"–", big=(d.bud!=null&&d.V!=null)&&Math.abs(d.bud-d.V)>Math.max(3,0.02*Math.abs(d.V));
     var devCell=h("td",null,[(d.dev&&d.dev.length)?h("details",null,[h("summary",{text:d.dev.length+" avviker"}),h("ul",{cls:"devlist"},d.dev.map(function(x){return h("li",{text:x});}))]):((d.same||d.own)?"Inga":"–")]);
     var pick=h("button",{cls:"btn quiet",type:"button",text:"Grupp "+r.grp}); pick.addEventListener("click",function(){ if(st.step===0){ st.grp=r.grp; save(); renderAll(); } });
-    tb.appendChild(h("tr",null,[h("td",null,[st.step===0?pick:"Grupp "+r.grp,r.run>1?h("span",{cls:"tag diff",text:"försök "+r.run}):null]),h("td",{text:r.step+". "+(names[r.step-1]||"")}),h("td",{text:d.rec?(d.rec==="lock"?"Sälj":"Alt. "+d.rec):"–"}),h("td",{text:d.d3?(d.d3==="ja"?"Ja":"Nej"):"–"}),h("td",{text:negT}),h("td",{text:d.alt?(d.alt==="sell"?"Sålde":"Alt. "+d.alt):"–"}),h("td",null,[val,big?h("span",{cls:"tag diff",text:"avviker"}):null]),devCell,h("td",{text:mins<1?"nyss":mins+" min sedan"})])); });
-  host.appendChild(h("div",{cls:"tablewrap tall"},[h("table",{cls:"live"},[h("thead",null,[h("tr",null,["Grupp","Etapp","Rekommendation",SEM.dName,"Förhandling","Slutval","Egen värdering mot lösning (Mkr)","Räknesvar","Uppdaterad"].map(function(x){return h("th",{text:x});}))]),tb])]));
+    tb.appendChild(h("tr",{cls:"lv"+r.g.lvl},[h("td",null,[h("span",{cls:"tag "+r.g.cls,text:r.g.label}),r.g.why.length?h("span",{cls:"why",text:r.g.why.join("; ")}):null]),h("td",null,[st.step===0?pick:"Grupp "+r.grp,r.run>1?h("span",{cls:"tag diff",text:"försök "+r.run}):null]),h("td",{text:r.step+". "+(names[r.step-1]||"")}),h("td",{text:d.rec?(d.rec==="lock"?"Sälj":"Alt. "+d.rec):"–"}),h("td",{text:d.d3?(d.d3==="ja"?"Ja":"Nej"):"–"}),h("td",{text:negT}),h("td",{text:d.alt?(d.alt==="sell"?"Sålde":"Alt. "+d.alt):"–"}),h("td",null,[val,big?h("span",{cls:"tag diff",text:"avviker"}):null]),devCell,h("td",{text:mins<1?"nyss":mins+" min sedan"})])); });
+  var cnt=[0,0,0]; rows.forEach(function(r){ if(r.g.lvl>=0) cnt[r.g.lvl]++; });
+  host.appendChild(h("div",{cls:"flagsum"},[h("span",{cls:"tag diff",text:cnt[2]+" att följa upp"}),h("span",{cls:"tag own",text:cnt[1]+" att kontrollera"}),h("span",{cls:"tag same",text:cnt[0]+" OK"})]));
+  host.appendChild(h("details",{cls:"more"},[h("summary",{text:"Så bedöms grupperna"}),h("ul",{cls:"devlist"},[
+    h("li",{text:"Följ upp: minst "+FLAG.devRed+" räknesvar avviker (eller minst hälften), den egna värderingen ligger mer än "+Math.round(FLAG.valRed*100)+" % från lösningsförslaget, eller minst två beslut skiljer sig från lösningsförslaget."}),
+    h("li",{text:"Kontrollera: ett eller två räknesvar avviker, värderingen ligger "+Math.round(FLAG.valYel*100)+"–"+Math.round(FLAG.valRed*100)+" % fel, ett beslut skiljer sig, eller gruppen har startat om."}),
+    h("li",{text:"OK: alla räknesvar stämmer med lösningsförslaget eller med gruppens egen tolkning i etapp 1, och besluten stämmer."}),
+    h("li",{text:"Bedömningen är ett stöd för att välja följdfrågor, inte ett betyg. Ett svar som bygger på en annan rimlig tolkning räknas inte som fel."})])]));
+  host.appendChild(h("div",{cls:"tablewrap tall"},[h("table",{cls:"live"},[h("thead",null,[h("tr",null,["Bedömning","Grupp","Etapp","Rekommendation",SEM.dName,"Förhandling","Slutval","Egen värdering mot lösning (Mkr)","Räknesvar","Uppdaterad"].map(function(x){return h("th",{text:x});}))]),tb])]));
   host.appendChild(h("p",{cls:"help",text:rows.length+" grupper. Uppdateras var femtonde sekund."+(st.step===0?" Klicka på en grupp för att visa dess lösningsförslag.":"")})); }
 function livePanel(){ if(!LIVE.iv){ LIVE.iv=setInterval(function(){ if($("liveBody")) liveFetch(); },15000); } setTimeout(liveFetch,0);
   return h("section",{cls:"panel"},[h("h2",{text:"Grupperna just nu"}),h("p",{cls:"pdesc",text:"Här ser du var varje grupp befinner sig, vad de har beslutat och vilka räknesvar som avviker från lösningsförslaget. Använd det för att välja presentatör och följdfråga. Inga namn sparas, bara gruppnummer."}),h("div",{id:"liveBody"})]); }
