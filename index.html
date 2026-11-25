@@ -403,6 +403,12 @@ table.live .tag{margin-left:6px}
 table.live .btn.quiet{padding:0}
 .devlist{margin:4px 0 0;padding-left:16px;font-size:12.5px;color:var(--ink-2);max-width:46ch}
 @media (max-width:620px){ thead th{white-space:normal} th,td{padding:5px 6px} }
+.card.result{border-top:6px solid var(--s-a)}
+.card.result .big{font-family:var(--f-display);font-size:22px;font-weight:650;line-height:1.25;max-width:46ch}
+.card.result ul.diffs{margin:0;padding-left:20px;display:grid;gap:4px;max-width:70ch}
+table.res td,table.res th{white-space:normal;vertical-align:top}
+table.res th:nth-child(2),table.res td:nth-child(2){text-align:left}
+table.res td.n{white-space:nowrap;text-align:right}
 </style>
 
 
@@ -826,28 +832,39 @@ function renderNeg(idx,s){ var N=st.neg, inner=h("div",{style:"display:grid;gap:
   stageShell(idx,s,inner,"Regler: ni har högst tre motbud. Vantrell har en smärtgräns som ni inte känner till, och hur mycket de ger efter varierar. Kräver ni orimligt mycket två gånger drar de tillbaka budet, och då återstår bara att investera. Ni kan när som helst acceptera budet som ligger eller avbryta."); }
 
 /* ---------------------------------------------------------------- utfallet */
-function outcome(){ var sb=solBase(true), d=A("e3.d3"), base=SEM.after(sb,PAR,d), al=SEM.alts(d), N=st.neg, abs=withO(base,{bid:0,cls:withO(SOLCLS,{upps:"nej"})});
-  var plan=realized(abs,[]), real=realized(abs,worldOf(SEM)), Dref=N.deal?N.price:(N.withdrawn?null:N.L), sell=Dref==null?null:(Dref-7)*(1-T);
+function outcome(){ var sb=solBase(true), d=A("e3.d3"), base=SEM.after(sb,PAR,d), al=SEM.alts(d), N=st.neg, W=worldOf(SEM);
+  function absOf(b){ return withO(b,{bid:0,cls:withO(SOLCLS,{upps:"nej"})}); }
+  var abs=absOf(base), plan=realized(abs,[]), real=realized(abs,W), Dref=N.deal?N.price:(N.withdrawn?null:N.L), sell=Dref==null?null:(Dref-7)*(1-T);
   var chosen=N.deal?"sell":(al.length===1?al[0]:A("e5.alt")), show=chosen==="sell"?bestOf(base,al):chosen;
-  return {al:al,plan:plan,real:real,Dref:Dref,sell:sell,chosen:chosen,show:show,n:plan[show].cum.length-1}; }
-function renderOutcomeChart(host,O,k){ var W=Math.max(300,host.clientWidth), H=W<520?260:310, m={l:58,r:18,t:16,b:40}, P=O.plan[O.show].cum, R=O.real[O.show].cum, n=O.n, i;
-  var lo=Math.min.apply(null,P.concat(R)), hi=Math.max.apply(null,P.concat(R)); if(O.sell!=null){ lo=Math.min(lo,O.sell); hi=Math.max(hi,O.sell); } lo=Math.min(lo,0); hi=Math.max(hi,0); var pad=(hi-lo)*0.07; lo-=pad; hi+=pad;
+  /* lösningsförslagets väg: rätt beslut i etapp 3, sedan det bästa av att investera och att sälja för det bud gruppen hade */
+  var dR=PAR.dopt, baseR=SEM.after(sb,PAR,dR), alR=SEM.alts(dR), absR=absOf(baseR), planR=realized(absR,[]), realR=realized(absR,W), bestR=bestOf(baseR,alR);
+  var recAct=(sell!=null&&sell>planR[bestR].npv)?"sell":bestR;
+  function pathOf(act,rl,pl,dd){ if(act==="sell") return {act:"sell",d:dd,cum:null,npv:sell,plan:sell}; return {act:act,d:dd,cum:rl[act].cum,npv:rl[act].npv,plan:pl[act].npv}; }
+  var our=pathOf(chosen,real,plan,d), rec=pathOf(recAct,realR,planR,dR), n=0;
+  [our,rec,{cum:plan[show].cum}].forEach(function(p){ if(p.cum) n=Math.max(n,p.cum.length-1); });
+  function at(p,k){ if(!p.cum) return p.npv; return p.cum[Math.min(k,p.cum.length-1)]; }
+  return {al:al,plan:plan,real:real,Dref:Dref,sell:sell,chosen:chosen,show:show,n:n,our:our,rec:rec,at:at,same:our.act===rec.act&&our.d===rec.d}; }
+function pathName(p){ var a=p.act==="sell"?"sälja till Vantrell för "+fmt(Dref0(),0)+" Mkr":"investera enligt alternativ "+p.act; return SEM.dName+" "+(p.d==="ja"?"ja":"nej")+", sedan "+a; }
+function Dref0(){ var N=st.neg||{}; return N.deal?N.price:N.L; }
+function renderOutcomeChart(host,O,k){ var W=Math.max(300,host.clientWidth), H=W<520?260:310, m={l:58,r:18,t:16,b:40}, n=O.n, i, j;
+  var A1=[],B1=[]; for(i=0;i<=n;i++){ A1.push(O.at(O.our,i)); B1.push(O.at(O.rec,i)); }
+  var lo=Math.min.apply(null,A1.concat(B1)), hi=Math.max.apply(null,A1.concat(B1)); lo=Math.min(lo,0); hi=Math.max(hi,0); var pad=(hi-lo)*0.07||10; lo-=pad; hi+=pad;
   var yt=niceTicks(lo,hi,5), X=function(x){return m.l+x/n*(W-m.l-m.r);}, Y=function(y){return m.t+(hi-y)/(hi-lo)*(H-m.t-m.b);};
-  var svg=sv("svg",{viewBox:"0 0 "+W+" "+H,width:W,height:H,role:"img","aria-label":"Ackumulerat nuvärde enligt kalkylen och enligt utfallet, år för år"});
+  var svg=sv("svg",{viewBox:"0 0 "+W+" "+H,width:W,height:H,role:"img","aria-label":"Ackumulerat nuvärde år för år för er väg och för lösningsförslagets väg"});
   yt.ticks.forEach(function(t){ svg.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(t),y2:Y(t),stroke:t===0?"var(--ink)":"var(--grid)","stroke-width":1})); svg.appendChild(sv("text",{x:m.l-8,y:Y(t)+4,"text-anchor":"end"},fmt(t,0))); });
   for(i=0;i<=n;i+=(n>12?2:1)) svg.appendChild(sv("text",{x:X(i),y:H-m.b+18,"text-anchor":"middle"},String(i)));
   svg.appendChild(sv("text",{x:(m.l+W-m.r)/2,y:H-5,"text-anchor":"middle"},"År")); svg.appendChild(sv("text",{x:m.l,y:11,"text-anchor":"start"},"Ackumulerat nuvärde, Mkr"));
-  if(O.sell!=null) svg.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(O.sell),y2:Y(O.sell),stroke:"var(--s-b)","stroke-width":2}));
-  function pathOf(arr,upto){ var d=""; for(var j=0;j<=upto;j++) d+=(j?"L":"M")+X(j).toFixed(1)+" "+Y(arr[j]).toFixed(1); return d; }
-  svg.appendChild(sv("path",{d:pathOf(P,n),fill:"none",stroke:"var(--muted)","stroke-width":2,"stroke-dasharray":"5 4","stroke-linejoin":"round"}));
-  svg.appendChild(sv("path",{d:pathOf(R,k),fill:"none",stroke:"var(--s-a)","stroke-width":2.5,"stroke-linejoin":"round","stroke-linecap":"round"}));
-  svg.appendChild(sv("circle",{cx:X(k),cy:Y(R[k]),r:5,fill:"var(--s-a)",stroke:"var(--surface)","stroke-width":2}));
+  function pathD(arr,upto){ var d=""; for(var q=0;q<=upto;q++) d+=(q?"L":"M")+X(q).toFixed(1)+" "+Y(arr[q]).toFixed(1); return d; }
+  if(!O.same) svg.appendChild(sv("path",{d:pathD(B1,k),fill:"none",stroke:"var(--s-c)","stroke-width":2.5,"stroke-dasharray":"7 5","stroke-linejoin":"round"}));
+  svg.appendChild(sv("path",{d:pathD(A1,k),fill:"none",stroke:"var(--s-a)","stroke-width":3,"stroke-linejoin":"round","stroke-linecap":"round"}));
+  if(!O.same) svg.appendChild(sv("circle",{cx:X(k),cy:Y(B1[k]),r:4.5,fill:"var(--s-c)",stroke:"var(--surface)","stroke-width":2}));
+  svg.appendChild(sv("circle",{cx:X(k),cy:Y(A1[k]),r:5.5,fill:"var(--s-a)",stroke:"var(--surface)","stroke-width":2}));
   var cross=sv("line",{x1:0,x2:0,y1:m.t,y2:H-m.b,stroke:"var(--ink-2)","stroke-width":1,visibility:"hidden"}); svg.appendChild(cross);
   var hit=sv("rect",{x:m.l,y:m.t,width:W-m.l-m.r,height:H-m.t-m.b,fill:"transparent"}); svg.appendChild(hit);
   host.textContent=""; host.appendChild(svg); var tip=h("div",{cls:"tip"}); tip.hidden=true; host.appendChild(tip);
-  hit.addEventListener("pointermove",function(e){ var r=svg.getBoundingClientRect(), px=(e.clientX-r.left)*W/r.width, j=clamp(Math.round((px-m.l)/(W-m.l-m.r)*n),0,n); cross.setAttribute("x1",X(j)); cross.setAttribute("x2",X(j)); cross.setAttribute("visibility","visible");
-    tip.textContent=""; tip.appendChild(h("div",{cls:"t",text:"År "+j})); tip.appendChild(h("div",null,["Kalkyl ",h("b",{text:sgn(P[j],0)})," Mkr"])); if(j<=k) tip.appendChild(h("div",null,["Utfall ",h("b",{text:sgn(R[j],0)})," Mkr"]));
-    tip.hidden=false; var w=tip.offsetWidth, left=X(j)*host.clientWidth/W+14; if(left+w>host.clientWidth) left=X(j)*host.clientWidth/W-w-14; tip.style.left=Math.max(0,left)+"px"; tip.style.top=Math.max(0,Y(Math.max(P[j],R[Math.min(j,k)]))*host.clientWidth/W-tip.offsetHeight-10)+"px"; });
+  hit.addEventListener("pointermove",function(e){ var r=svg.getBoundingClientRect(), px=(e.clientX-r.left)*W/r.width; j=clamp(Math.round((px-m.l)/(W-m.l-m.r)*n),0,k); cross.setAttribute("x1",X(j)); cross.setAttribute("x2",X(j)); cross.setAttribute("visibility","visible");
+    tip.textContent=""; tip.appendChild(h("div",{cls:"t",text:"År "+j})); tip.appendChild(h("div",null,["Er väg ",h("b",{text:sgn(A1[j],0)})," Mkr"])); if(!O.same) tip.appendChild(h("div",null,["Lösningsförslaget ",h("b",{text:sgn(B1[j],0)})," Mkr"]));
+    tip.hidden=false; var w=tip.offsetWidth, left=X(j)*host.clientWidth/W+14; if(left+w>host.clientWidth) left=X(j)*host.clientWidth/W-w-14; tip.style.left=Math.max(0,left)+"px"; tip.style.top=Math.max(0,Y(Math.max(A1[j],B1[j]))*host.clientWidth/W-tip.offsetHeight-10)+"px"; });
   hit.addEventListener("pointerleave",function(){ cross.setAttribute("visibility","hidden"); tip.hidden=true; }); }
 function cardText(){ var L=["Lindhaven investeringssimulator: svarskort",sessTxt()+" ("+SEM.name+"), grupp "+st.grp+(runTxt()?", "+runTxt():"")+(st.members?": "+st.members:""),""];
   STAGES.forEach(function(s,i){ L.push("ETAPP "+(i+1)+": "+s.subj); s.fields.forEach(function(f){ if(f.t==="cls") CLSITEMS.forEach(function(it){ L.push("- "+it[1]+": "+optLabel(CLS,A(s.id+"."+f.id+"."+it[0]))); }); else L.push("- "+f.label+" "+ansText(s,f)); }); if(s.custom==="neg") L.push("- Förhandlingens resultat: "+negSummary()); L.push(""); });
@@ -864,11 +881,11 @@ function valCard(O){ var own=parseNum(A("e4.bud")), d=A("e3.d3"), N=st.neg; if(i
   if(L!=null) row(N.deal?"Priset ni sålde för":"Vantrells sista bud, som ni tackade nej till",L,"var(--s-b)");
   row("Utfallet för alternativ "+O.show+" motsvarade ett bud på",Z,"var(--s-a)");
   var t1=close?"Er värdering stämmer med lösningsförslaget.":"Er värdering ligger "+fmt(Math.abs(diff),0)+" Mkr "+(diff>0?"över":"under")+" lösningsförslagets. Gå igenom varför i genomgången: det kan vara en annan tolkning eller ett räknefel.";
-  var act=N.deal?"sell":"inv", solAct=(L!=null&&L>=V)?"sell":"inv", t2;
+  var act=N.deal?"sell":"inv", solAct=O.rec.act==="sell"?"sell":"inv", t2;
   if(L==null) t2="Vantrell drog tillbaka sitt bud, så det fanns inget bud att jämföra värderingen med.";
-  else if(act===solAct) t2=(act==="sell"?"Att sälja för "+fmt(L,0)+" Mkr":"Att tacka nej till "+fmt(L,0)+" Mkr och investera")+" stämmer med lösningsförslagets värdering"+(close?".":", även om er egen värdering var en annan.");
-  else if(act==="sell") t2="Enligt lösningsförslaget var projektet värt mer än de "+fmt(L,0)+" Mkr ni sålde för, så kalkylen talade för att investera.";
-  else t2="Enligt lösningsförslaget var Vantrells bud på "+fmt(L,0)+" Mkr högre än projektets värde, så kalkylen talade för att sälja.";
+  else if(act===solAct) t2=(act==="sell"?"Att sälja för "+fmt(L,0)+" Mkr":"Att tacka nej till "+fmt(L,0)+" Mkr och investera")+" stämmer med lösningsförslaget"+(close?".":", även om er egen värdering var en annan.");
+  else if(act==="sell") t2="Enligt lösningsförslaget var det bättre att investera än att sälja för "+fmt(L,0)+" Mkr.";
+  else t2="Enligt lösningsförslaget var Vantrells bud på "+fmt(L,0)+" Mkr värt mer än att investera, så det hade varit bättre att sälja.";
   return h("div",{cls:"card",style:"display:grid;gap:12px;margin-top:16px"},[h("h2",{text:"Hur bra var er egen kalkyl?"}),
     h("p",{cls:"pdesc",text:"Det lägsta bud ni kunde acceptera är er egen värdering av projektet. Här jämförs den med lösningsförslaget, med budet och med hur det faktiskt gick. Allt är uttryckt som det bud som ger samma värde."}),
     h("div",{cls:"tablewrap"},[h("table",{cls:"val"},[tb])]),h("p",{cls:"note",text:t1+" "+t2})]); }
@@ -888,26 +905,42 @@ function presCard(O){ var N=st.neg||{}, d=A("e3.d3"), ul=h("ol",{cls:"pres"});
   return h("div",{cls:"card",style:"display:grid;gap:12px;margin-top:16px"},[h("div",{cls:"qhead"},[h("h2",{text:"Er presentation"}),h("div",{cls:"presrow"},[clock,b])]),
     h("p",{cls:"pdesc",text:"Ni har ungefär två minuter. Säg det viktigaste: vad som hände, vad ni beslutade och varför. Läraren väljer vem som presenterar och ställer sedan en följdfråga till någon annan i gruppen, så alla behöver kunna förklara siffrorna."}),ul]); }
 var PLAY=null; function stopPlay(){ if(PLAY){ clearInterval(PLAY); PLAY=null; } }
-function outHead(O,k){ var R=O.real[O.show].cum[k], P=O.plan[O.show].cum[k];
-  function cell(lab,val,cls){ return h("div",null,[h("div",{cls:"k",text:lab}),h("div",{cls:"v"+(cls?" "+cls:""),text:val})]); }
-  return h("div",{cls:"outhead"},[cell("År",k+" av "+O.n),cell("Ackumulerat nuvärde, utfall",sgn(R,0)+" Mkr",R>=0?"pos":"neg"),cell("Kalkyl enligt lösningsförslaget",sgn(P,0)+" Mkr"),cell("Skillnad",sgn(R-P,0)+" Mkr",R-P>=0?"pos":"neg")]); }
+function outHead(O,k){ var a=O.at(O.our,k), b=O.at(O.rec,k), d=Math.round(a)-Math.round(b);
+  function cell(lab,sub,val,cls){ return h("div",null,[h("div",{cls:"k",text:lab}),h("div",{cls:"v"+(cls?" "+cls:""),text:val}),sub?h("div",{cls:"k",style:"margin-top:2px",text:sub}):null]); }
+  if(O.same) return h("div",{cls:"outhead"},[cell("År",null,k+" av "+O.n),cell("Er väg, ackumulerat nuvärde","Samma väg som lösningsförslaget",sgn(a,0)+" Mkr",a>=0?"pos":"neg")]);
+  return h("div",{cls:"outhead"},[cell("År",null,k+" av "+O.n),cell("Er väg",O.our.act==="sell"?"Sålde till Vantrell":"Alternativ "+O.our.act,sgn(a,0)+" Mkr",a>=0?"pos":"neg"),cell("Lösningsförslagets väg",O.rec.act==="sell"?"Sälja till Vantrell":"Alternativ "+O.rec.act,sgn(b,0)+" Mkr",b>=0?"pos":"neg"),cell("Skillnad mot lösningsförslaget",d===0?"Lika":(d>0?"Ni ligger före":"Ni ligger efter"),sgn(d,0)+" Mkr",d===0?"":(d>0?"pos":"neg"))]); }
+/* sammanfattning när utfallet är uppspelat: vad gruppens beslut ledde till jämfört med lösningsförslaget */
+function resultBox(O){ var j=judgeAll(), tot=j.same+j.own+j.dev.length, diffs=[], N=st.neg||{};
+  if(O.our.d!==O.rec.d) diffs.push("I etapp 3 svarade ni "+(O.our.d==="ja"?"ja":"nej")+" ("+SEM.dName.toLowerCase()+"). Lösningsförslaget svarar "+(O.rec.d==="ja"?"ja":"nej")+"."+(O.our.act==="sell"&&O.rec.act==="sell"?" Eftersom LH-201 såldes påverkade det beslutet inte värdet.":""));
+  if((O.our.act==="sell")!==(O.rec.act==="sell")) diffs.push(O.our.act==="sell"?"Ni sålde till Vantrell för "+fmt(N.price,0)+" Mkr. Enligt lösningsförslaget var det bättre att investera.":"Ni tackade nej till Vantrells bud på "+fmt(O.Dref,0)+" Mkr. Enligt lösningsförslaget var budet värt mer än att investera.");
+  else if(O.our.act!=="sell"&&O.our.act!==O.rec.act) diffs.push("Ni valde alternativ "+O.our.act+". Lösningsförslaget väljer alternativ "+O.rec.act+".");
+  var d=Math.round(O.our.npv)-Math.round(O.rec.npv), dp=Math.round(O.our.plan)-Math.round(O.rec.plan), rows=h("tbody");
+  function tr(lab,p,cls){ rows.appendChild(h("tr",cls?{cls:cls}:null,[h("td",{text:lab}),h("td",{text:pathName(p).replace(/^./,function(c){return c.toUpperCase();})}),h("td",{cls:"n",text:sgn(p.plan,0)+" Mkr"}),h("td",{cls:"n",text:sgn(p.npv,0)+" Mkr"})])); }
+  tr("Er väg",O.our,"strong"); if(!O.same) tr("Lösningsförslagets väg",O.rec);
+  if(!O.same) rows.appendChild(h("tr",{cls:"sum"},[h("td",{text:"Skillnad"}),h("td",{text:""}),h("td",{cls:"n",text:sgn(dp,0)+" Mkr"}),h("td",{cls:"n",text:sgn(d,0)+" Mkr"})]));
+  var head=O.same?(j.dev.length?"Era beslut stämmer med lösningsförslaget, men "+j.dev.length+" av "+tot+" räknesvar avviker.":"Era beslut stämmer med lösningsförslaget."):(dp<0?"Era beslut gav "+fmt(-dp,0)+" Mkr lägre värde än lösningsförslagets enligt kalkylen"+(d>0?", men utfallet blev "+fmt(d,0)+" Mkr bättre.":(d<0?", och utfallet blev "+fmt(-d,0)+" Mkr sämre.":".")):"Era beslut gav samma värde som lösningsförslagets enligt kalkylen.");
+  return h("div",{cls:"card result",style:"display:grid;gap:12px"},[h("h2",{text:"Vad era beslut ledde till"}),h("p",{cls:"big",text:head}),
+    diffs.length?h("ul",{cls:"diffs"},diffs.map(function(t){return h("li",{text:t});})):null,
+    h("div",{cls:"tablewrap"},[h("table",{cls:"res"},[h("thead",null,[h("tr",null,[h("th",{text:""}),h("th",{text:"Beslut"}),h("th",{text:"Enligt kalkylen"}),h("th",{text:"Utfall"})])]),rows])]),
+    h("p",{cls:"note",text:"Räknesvar: "+j.same+" av "+tot+" stämmer med lösningsförslaget"+(j.own?", "+j.own+" bygger på er egen tolkning":"")+(j.dev.length?" och "+j.dev.length+" avviker":"")+". Era räknesvar påverkar inte utfallet ovan, eftersom det bara beror på vilka beslut ni fattade. Ett felräknat svar märks här först om det fick er att fatta ett annat beslut än lösningsförslaget."})]); }
 function renderDone(){ var app=$("app"); app.textContent=""; var O=outcome(), k=clamp(st.outK||0,0,O.n), done=k>=O.n;
   var chart=h("div",{cls:"chart",id:"outChart"}), ev=h("ol",{cls:"events"});
   worldOf(SEM).slice().reverse().forEach(function(e){ if(e.y<=k) ev.appendChild(h("li",{cls:e.y===k?"fresh":null},[h("b",{text:"År "+e.y}),h("span",{text:e.text})])); }); if(!ev.children.length) ev.appendChild(h("li",null,[h("b",{text:"År "+k}),h("span",{text:k===0?"Investeringarna är gjorda. Stega fram för att se vad som händer.":"Inga nya händelser ännu."})]));
   var bPlay=h("button",{cls:"btn primary",type:"button",text:PLAY?"Pausa":"Spela upp år för år"}), bNext=h("button",{cls:"btn",type:"button",text:"Ett år framåt"}), bAll=h("button",{cls:"btn",type:"button",text:"Hoppa till slutet"});
   bNext.addEventListener("click",function(){ stopPlay(); st.outK=k+1; save(); renderDone(); }); bAll.addEventListener("click",function(){ stopPlay(); st.outK=O.n; save(); renderDone(); });
   bPlay.addEventListener("click",function(){ if(PLAY){ stopPlay(); renderDone(); return; } PLAY=setInterval(function(){ var O2=outcome(); if((st.outK||0)>=O2.n){ stopPlay(); renderDone(); return; } st.outK=(st.outK||0)+1; save(); renderDone(); },900); renderDone(); });
-  var what=O.chosen==="sell"?"Ni sålde till Vantrell. Diagrammet visar vad som hade hänt om ni i stället hade investerat enligt alternativ "+O.show+".":"Ni investerade enligt alternativ "+O.show+". Diagrammet visar hur det gick, år för år.";
-  var leg=h("div",{cls:"legend"}); [["var(--s-a)","Utfall, alternativ "+O.show],["var(--muted)","Kalkyl enligt lösningsförslaget"]].concat(O.sell!=null?[["var(--s-b)","Sälja till Vantrell för "+fmt(O.Dref,0)+" Mkr"]]:[]).forEach(function(x){ var i=h("i"); i.style.background=x[0]; leg.appendChild(h("span",null,[i,x[1]])); });
-  var card=h("div",{cls:"card",style:"display:grid;gap:14px"},[h("div",{cls:"qhead"},[h("h2",{text:"Så gick det"}),h("span",{cls:"time",text:"År "+k+" av "+O.n})]),h("p",{cls:"pdesc",text:what+" Alla grupper i seminariet möter samma framtid."}),outHead(O,k),done?null:h("div",{cls:"go",style:"border-top:0;padding-top:0"},[bPlay,bNext,bAll]),leg,chart,ev]);
+  var what=O.same?"Ni valde samma väg som lösningsförslaget: "+pathName(O.our)+". Diagrammet visar hur det gick, år för år.":"Den blå linjen är er väg: "+pathName(O.our)+". Den gröna streckade linjen är lösningsförslagets väg: "+pathName(O.rec)+".";
+  var leg=h("div",{cls:"legend"}); [["var(--s-a)","Er väg"]].concat(O.same?[]:[["var(--s-c)","Lösningsförslagets väg"]]).forEach(function(x){ var i=h("i"); i.style.background=x[0]; leg.appendChild(h("span",null,[i,x[1]])); });
+  var card=h("div",{cls:"card",style:"display:grid;gap:14px"},[h("div",{cls:"qhead"},[h("h2",{text:"Så gick det"}),h("span",{cls:"time",text:"År "+k+" av "+O.n})]),h("p",{cls:"pdesc",text:what+" Alla grupper vid tillfället möter samma framtid."}),outHead(O,k),done?null:h("div",{cls:"go",style:"border-top:0;padding-top:0"},[bPlay,bNext,bAll]),leg,chart,ev]);
   if(done){ var tb=h("tbody"), vals=[]; if(O.sell!=null) vals.push({k:"sell",name:"Sälja till Vantrell för "+fmt(O.Dref,0)+" Mkr",low:"en försäljning till Vantrell",p:O.sell,r:O.sell}); O.al.forEach(function(a){ vals.push({k:a,name:"Investera enligt a"+ALTNAME[a].slice(1),low:"alternativ "+a,p:O.plan[a].npv,r:O.real[a].npv}); });
     var bestP=vals.slice().sort(function(a,b){return b.p-a.p;})[0], bestR=vals.slice().sort(function(a,b){return b.r-a.r;})[0], mine=vals.filter(function(v){return v.k===O.chosen;})[0];
     vals.forEach(function(v){ tb.appendChild(h("tr",v.k===O.chosen?{cls:"strong"}:null,[h("td",null,[v.name+(v.k===O.chosen?" (ert val)":""),(v===bestP||v===bestR)?h("span",{cls:"why",text:(v===bestP?"Bäst enligt lösningsförslagets kalkyl":"")+(v===bestP&&v===bestR?" och bäst i efterhand":"")+(v!==bestP&&v===bestR?"Bäst i efterhand":"")}):null]),h("td",{cls:"n",text:sgn(v.p,0)}),h("td",{cls:"n",text:sgn(v.r,0)})])); });
     var verdict=mine?("Ert val gav "+fmt(mine.r,0)+" Mkr i nuvärde. "+(mine===bestR?"Det blev också det bästa valet i efterhand.":"I efterhand hade "+bestR.low+" gett "+fmt(bestR.r-mine.r,0)+" Mkr mer.")+" "+(mine===bestP?"Enligt lösningsförslagets kalkyl var det rätt val när beslutet fattades.":"Enligt lösningsförslagets kalkyl var "+bestP.low+" "+fmt(bestP.p-mine.p,0)+" Mkr bättre när beslutet fattades.")):"";
-    card.appendChild(h("div",{cls:"tablewrap"},[h("table",null,[h("thead",null,[h("tr",null,[h("th",{text:"Nuvärde i Mkr"}),h("th",{text:"Kalkyl enligt lösningsförslaget"}),h("th",{text:"Utfall"})])]),tb])]));
+    card.appendChild(h("div",{cls:"tablewrap"},[h("table",null,[h("thead",null,[h("tr",null,[h("th",{text:"Alla möjligheter efter ert beslut i etapp 3, nuvärde i Mkr"}),h("th",{text:"Enligt kalkylen"}),h("th",{text:"Utfall"})])]),tb])]));
     card.appendChild(h("p",{cls:"note",text:verdict}));
     var vc=valCard(O);
-    card.appendChild(h("p",{cls:"pdesc",text:"Ett bra beslut kan få ett dåligt utfall, och tvärtom. Bedöm beslutet efter vad ni visste när ni fattade det. Diagrammet och tabellen bygger inte på era inskrivna siffror, utan på lösningsförslagets kalkyl (med skatt på engångsposter) och på era bindande beslut."})); }
+    card.appendChild(h("p",{cls:"pdesc",text:"Ett bra beslut kan få ett dåligt utfall, och tvärtom. Bedöm beslutet efter vad ni visste när ni fattade det, alltså kolumnen Enligt kalkylen. Värdena räknas med lösningsförslagets kalkyl (med skatt på engångsposter) och era bindande beslut."})); }
+  if(done) app.appendChild(resultBox(O));
   app.appendChild(card);
   if(done&&vc) app.appendChild(vc);
   if(done) app.appendChild(presCard(O));
